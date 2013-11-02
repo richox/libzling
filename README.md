@@ -13,7 +13,7 @@ simple benchmark with __enwik8__(100,000,000 bytes), with mingw-gcc-4.7.3, test 
 
 <table border="1">
  <tr><td>Tool</td>  <td>Compressed Size</td> <td>Encode</td> <td>Decode</td></tr>
- <tr><td>zling</td> <td>?</td>               <td>?</td>      <td>?</td></tr>
+ <tr><td>zling</td> <td>32799061</td>        <td>3.557s</td> <td>1.186s</td></tr>
  <tr><td>gzip</td>  <td>36518322</td>        <td>6.635s</td> <td>1.268s</td></tr>
 </table>
 
@@ -21,6 +21,6 @@ simple benchmark with __fp.log__(20,617,071 bytes), with mingw-gcc-4.7.3, test w
 
 <table border="1">
  <tr><td>Tool</td>  <td>Compressed Size</td> <td>Encode</td> <td>Decode</td></tr>
- <tr><td>zling</td> <td>?</td>               <td>?</td>      <td>?</td></tr>
+ <tr><td>zling</td> <td>932887</td>          <td>0.156s</td> <td>0.094s</td></tr>
  <tr><td>gzip</td>  <td>1448582</td>         <td>0.392s</td> <td>0.122s</td></tr>
 </table>
