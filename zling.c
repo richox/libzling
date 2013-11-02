@@ -223,23 +223,6 @@ static int polar_make_decode_table(
 }
 
 /*******************************************************************************
- * RICE Coder
- ******************************************************************************/
-#define RICE_CODE_M 9
-
-#define m_rice_q(n)         ((n) >> RICE_CODE_M)
-#define m_rice_r(n)         ((n) - (m_rice_q(n) << RICE_CODE_M))
-
-#define m_rice_len(n)       ((m_rice_q(n) + RICE_CODE_M) + 1)
-#define m_rice_buf(n)       ((m_rice_r(n) * 2 + 1) << m_rice_q(n))
-
-#define m_rice_qdec(buf)    (__builtin_ctz(buf))
-#define m_rice_rdec(buf)    ((buf) >> (1 + m_rice_qdec(buf)) & ((1 << RICE_CODE_M) - 1))
-
-#define m_rice_lendec(buf)  (m_rice_qdec(buf) + RICE_CODE_M + 1)
-#define m_rice_codedec(buf) (m_rice_rdec(buf) + (m_rice_qdec(buf) << RICE_CODE_M))
-
-/*******************************************************************************
  * ROLZ
  ******************************************************************************/
 #define BUCKET_ITEM_SIZE        3600
@@ -450,8 +433,11 @@ static void print_result(size_t size_src, size_t size_dst, int encode) {
 /*******************************************************************************
  * MAIN
  ******************************************************************************/
-#define BLOCK_SIZE_IN   16777216
-#define BLOCK_SIZE_OUT  18000000
+#define BLOCK_SIZE_IN       16777216
+#define BLOCK_SIZE_OUT      18000000
+
+#define MATCHIDX_EXBIT      4 /* (BUCKET_ITEM_SIZE >> MATCHIDX_EXBIT) < POLAR_SYMBOLS */
+#define MATCHIDX_EXBIT_MASK 0x0f
 
 int main(int argc, char** argv) {
     static unsigned char  cbuf[BLOCK_SIZE_OUT];
@@ -464,10 +450,14 @@ int main(int argc, char** argv) {
     int rpos;
     int opos;
     int i;
-    unsigned int freq_table[POLAR_SYMBOLS];
-    unsigned int leng_table[POLAR_SYMBOLS];
-    unsigned int code_table[POLAR_SYMBOLS];
-    unsigned short decode_table[1 << POLAR_MAXLEN];
+    unsigned int freq_table1[POLAR_SYMBOLS];
+    unsigned int freq_table2[POLAR_SYMBOLS];
+    unsigned int leng_table1[POLAR_SYMBOLS];
+    unsigned int leng_table2[POLAR_SYMBOLS];
+    unsigned int code_table1[POLAR_SYMBOLS];
+    unsigned int code_table2[POLAR_SYMBOLS];
+    unsigned short decode_table1[1 << POLAR_MAXLEN];
+    unsigned short decode_table2[1 << POLAR_MAXLEN];
     clock_t checkpoint;
 
     unsigned long long code_buf;
@@ -518,31 +508,44 @@ int main(int argc, char** argv) {
             /* polar-encode */
             checkpoint = clock();
             {
-                memset(freq_table, 0, sizeof(freq_table));
+                memset(freq_table1, 0, sizeof(freq_table1));
+                memset(freq_table2, 0, sizeof(freq_table2));
                 code_buf = 0;
                 code_len = 0;
 
                 for (i = 0; i < rlen; i++) {
-                    freq_table[tbuf[i]] += 1;
-                    i += tbuf[i] >= 256;
+                    freq_table1[tbuf[i]] += 1;
+
+                    if (tbuf[i] >= 256) {
+                        i++;
+                        freq_table2[tbuf[i] >> MATCHIDX_EXBIT] += 1;
+                    }
                 }
-                polar_make_leng_table(freq_table, leng_table);
-                polar_make_code_table(leng_table, code_table);
+                polar_make_leng_table(freq_table1, leng_table1);
+                polar_make_leng_table(freq_table2, leng_table2);
+                polar_make_code_table(leng_table1, code_table1);
+                polar_make_code_table(leng_table2, code_table2);
 
                 /* write length table */
                 for (i = 0; i < POLAR_SYMBOLS; i += 2) {
-                    cbuf[olen++] = leng_table[i] * 16 + leng_table[i + 1];
+                    cbuf[olen++] = leng_table1[i] * 16 + leng_table1[i + 1];
+                }
+                for (i = 0; i < POLAR_SYMBOLS; i += 2) {
+                    cbuf[olen++] = leng_table2[i] * 16 + leng_table2[i + 1];
                 }
 
                 /* encode */
                 for (i = 0; i < rlen; i++) {
-                    code_buf += (unsigned long long)code_table[tbuf[i]] << code_len;
-                    code_len += leng_table[tbuf[i]];
+                    code_buf += (unsigned long long)code_table1[tbuf[i]] << code_len;
+                    code_len += leng_table1[tbuf[i]];
+
                     if (tbuf[i] >= 256) {
-                        //rice_code = rice_encode(tbuf[i + 1]);
-                        code_buf += (unsigned long long)m_rice_buf(tbuf[i + 1]) << code_len;
-                        code_len += m_rice_len(tbuf[i + 1]);
                         i++;
+                        code_buf += (unsigned long long)code_table2[tbuf[i] >> MATCHIDX_EXBIT] << code_len;
+                        code_len += leng_table2[tbuf[i] >> MATCHIDX_EXBIT];
+
+                        code_buf += (unsigned long long)(tbuf[i] & MATCHIDX_EXBIT_MASK) << code_len;
+                        code_len += MATCHIDX_EXBIT;
                     }
                     while (code_len >= 8) {
                         cbuf[olen++] = code_buf % 256;
@@ -601,29 +604,42 @@ int main(int argc, char** argv) {
             {
                 /* read length table */
                 for (i = 0; i < POLAR_SYMBOLS; i += 2) {
-                    leng_table[i] =     cbuf[opos] / 16;
-                    leng_table[i + 1] = cbuf[opos] % 16;
+                    leng_table1[i] =     cbuf[opos] / 16;
+                    leng_table1[i + 1] = cbuf[opos] % 16;
+                    opos++;
+                }
+                for (i = 0; i < POLAR_SYMBOLS; i += 2) {
+                    leng_table2[i] =     cbuf[opos] / 16;
+                    leng_table2[i + 1] = cbuf[opos] % 16;
                     opos++;
                 }
 
                 /* decode */
-                polar_make_code_table(leng_table, code_table);
-                polar_make_decode_table(leng_table, code_table, decode_table);
+                polar_make_code_table(leng_table1, code_table1);
+                polar_make_code_table(leng_table2, code_table2);
+                polar_make_decode_table(leng_table1, code_table1, decode_table1);
+                polar_make_decode_table(leng_table2, code_table2, decode_table2);
 
                 while (rpos < rlen) {
                     while (opos < olen && code_len < 56) {
                         code_buf += (unsigned long long)cbuf[opos++] << code_len;
                         code_len += 8;
                     }
-                    i = decode_table[code_buf % (1 << POLAR_MAXLEN)];
+                    i = decode_table1[code_buf % (1 << POLAR_MAXLEN)];
                     code_len  -= i / POLAR_SYMBOLS;
                     code_buf >>= i / POLAR_SYMBOLS;
                     tbuf[rpos++] = i % POLAR_SYMBOLS;
 
                     if (tbuf[rpos - 1] >= 256) {
-                        tbuf[rpos++] = m_rice_codedec(code_buf);
-                        code_len  -= m_rice_lendec(code_buf);
-                        code_buf >>= m_rice_lendec(code_buf);
+                        i = decode_table2[code_buf % (1 << POLAR_MAXLEN)];
+                        code_len  -= i / POLAR_SYMBOLS;
+                        code_buf >>= i / POLAR_SYMBOLS;
+                        tbuf[rpos++] = i % POLAR_SYMBOLS;
+
+                        tbuf[rpos - 1] <<= MATCHIDX_EXBIT;
+                        tbuf[rpos - 1] |= code_buf & MATCHIDX_EXBIT_MASK;
+                        code_len  -= MATCHIDX_EXBIT;
+                        code_buf >>= MATCHIDX_EXBIT;
                     }
                 }
             }
