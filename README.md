@@ -5,7 +5,7 @@ zling
 
 zling (zlite-ng) is an improved compression utility, based on [zlite](https://github.com/richox/zlite).
 
-zling shares the same entropy encoder with zlite, but uses an order-1 ROLZ, instead of zlite's order-3 one. and output index is encoded independently with Rice encoding.
+zling shares the same entropy encoder with zlite, but uses an order-1 ROLZ, instead of zlite's order-3 one. and output index is encoded independently with another Polar table plus some extra bits.
 
 in practice, zling compresses better and a bit slower than zlite, but decompresses faster.
 
