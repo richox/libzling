@@ -257,12 +257,12 @@ static int polar_make_decode_table(
 
 struct rolz_bucket_dec_st {
     unsigned int   m_offset[BUCKET_ITEM_SIZE];
-    unsigned int   m_head;
+    unsigned short m_head;
 };
 struct rolz_bucket_st {
     unsigned short m_suffix[BUCKET_ITEM_SIZE];
     unsigned int   m_offset[BUCKET_ITEM_SIZE];
-    unsigned int   m_head;
+    unsigned short m_head;
     unsigned short m_hash[BUCKET_ITEM_HASH];
 };
 
@@ -410,17 +410,17 @@ static int rolz_decode(unsigned short* ibuf, unsigned char* obuf, int ilen) {
 
     for (pos = 0; pos < ilen; pos++) {
         if (ibuf[pos] < 256) { /* process a literal byte */
-            rolz_dec_update(rolz_table, obuf, olen);
             obuf[olen] = ibuf[pos];
+            rolz_dec_update(rolz_table, obuf, olen);
             olen++;
 
         } else { /* process a match */
             match_len = ibuf[pos++] - 256 + MATCH_MINLEN;
             match_idx = ibuf[pos];
             match_offset = olen - rolz_dec_get_offset(rolz_table, obuf, olen, match_idx);
+            rolz_dec_update(rolz_table, obuf, olen);
 
             /* update context at current pos with rolz-table updating */
-            rolz_dec_update(rolz_table, obuf, olen);
             while (match_len > 0) {
                 obuf[olen] = obuf[olen - match_offset];
                 match_len -= 1;
