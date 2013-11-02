@@ -178,8 +178,6 @@ MakeTablePass:
 static int polar_make_code_table(const unsigned int* leng_table, unsigned int* code_table) {
     int i;
     int s;
-    int t1;
-    int t2;
     int code = 0;
 
     memset(code_table, 0, POLAR_SYMBOLS * sizeof(int));
@@ -197,15 +195,11 @@ static int polar_make_code_table(const unsigned int* leng_table, unsigned int* c
 
     /* reverse each code */
     for (i = 0; i < POLAR_SYMBOLS; i++) {
-        t1 = 0;
-        t2 = leng_table[i] - 1;
-        while (t1 < t2) {
-            code_table[i] ^= (1 & (code_table[i] >> t1)) << t2;
-            code_table[i] ^= (1 & (code_table[i] >> t2)) << t1;
-            code_table[i] ^= (1 & (code_table[i] >> t1)) << t2;
-            t1++;
-            t2--;
-        }
+        code_table[i] = ((code_table[i] & 0xff00) >> 8 | (code_table[i] & 0x00ff) << 8);
+        code_table[i] = ((code_table[i] & 0xf0f0) >> 4 | (code_table[i] & 0x0f0f) << 4);
+        code_table[i] = ((code_table[i] & 0xcccc) >> 2 | (code_table[i] & 0x3333) << 2);
+        code_table[i] = ((code_table[i] & 0xaaaa) >> 1 | (code_table[i] & 0x5555) << 1);
+        code_table[i] >>= 16 - leng_table[i];
     }
     return 0;
 }
