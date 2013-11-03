@@ -436,8 +436,39 @@ static void print_result(size_t size_src, size_t size_dst, int encode) {
 #define BLOCK_SIZE_IN       16777216
 #define BLOCK_SIZE_OUT      18000000
 
-#define MATCHIDX_EXBIT      4 /* (BUCKET_ITEM_SIZE >> MATCHIDX_EXBIT) < POLAR_SYMBOLS */
-#define MATCHIDX_EXBIT_MASK 0x0f
+static const unsigned char matchidx_bitlen[] = {
+    /* 0  */ 0, 0, 0, 0, 0, 0, 0, 0,
+    /* 8  */ 1, 1,
+    /* 10 */ 2, 2,
+    /* 12 */ 3, 3,
+    /* 14 */ 4, 4,
+    /* 16 */ 5, 5,
+    /* 18 */ 6, 6,
+    /* 20 */ 7, 7,
+    /* 22 */ 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    /* 35 */
+};
+static unsigned char  matchidx_code[BUCKET_ITEM_SIZE];
+static unsigned char  matchidx_bits[BUCKET_ITEM_SIZE];
+static unsigned short matchidx_base[sizeof(matchidx_bitlen)];
+
+static void matchidx_code_init_() __attribute__((constructor));
+static void matchidx_code_init_() {
+    int i;
+    int code = 0;
+    int bits = 0;
+
+    for (i = 0; i < BUCKET_ITEM_SIZE; i++) {
+        matchidx_code[i] = code;
+        matchidx_bits[i] = bits;
+
+        if ((++bits) >> matchidx_bitlen[code] != 0) {
+            bits = 0;
+            matchidx_base[++code] = i + 1;
+        }
+    }
+    return;
+}
 
 int main(int argc, char** argv) {
     static unsigned char  cbuf[BLOCK_SIZE_OUT];
@@ -518,7 +549,7 @@ int main(int argc, char** argv) {
 
                     if (tbuf[i] >= 256) {
                         i++;
-                        freq_table2[tbuf[i] >> MATCHIDX_EXBIT] += 1;
+                        freq_table2[matchidx_code[tbuf[i]]] += 1;
                     }
                 }
                 polar_make_leng_table(freq_table1, leng_table1);
@@ -540,12 +571,13 @@ int main(int argc, char** argv) {
                     code_len += leng_table1[tbuf[i]];
 
                     if (tbuf[i] >= 256) {
+                        unsigned char code = matchidx_code[tbuf[i + 1]];
+                        unsigned char bits = matchidx_bits[tbuf[i + 1]];
                         i++;
-                        code_buf += (unsigned long long)code_table2[tbuf[i] >> MATCHIDX_EXBIT] << code_len;
-                        code_len += leng_table2[tbuf[i] >> MATCHIDX_EXBIT];
-
-                        code_buf += (unsigned long long)(tbuf[i] & MATCHIDX_EXBIT_MASK) << code_len;
-                        code_len += MATCHIDX_EXBIT;
+                        code_buf += (unsigned long long)code_table2[code] << code_len;
+                        code_len += leng_table2[code];
+                        code_buf += (unsigned long long)bits << code_len;
+                        code_len += matchidx_bitlen[code];
                     }
                     while (code_len >= 8) {
                         cbuf[olen++] = code_buf % 256;
@@ -631,15 +663,18 @@ int main(int argc, char** argv) {
                     tbuf[rpos++] = i % POLAR_SYMBOLS;
 
                     if (tbuf[rpos - 1] >= 256) {
+                        unsigned char code;
+                        unsigned char bits;
+
                         i = decode_table2[code_buf % (1 << POLAR_MAXLEN)];
                         code_len  -= i / POLAR_SYMBOLS;
                         code_buf >>= i / POLAR_SYMBOLS;
-                        tbuf[rpos++] = i % POLAR_SYMBOLS;
+                        code =       i % POLAR_SYMBOLS;
+                        bits = code_buf & ((1 << matchidx_bitlen[code]) - 1);
 
-                        tbuf[rpos - 1] <<= MATCHIDX_EXBIT;
-                        tbuf[rpos - 1] |= code_buf & MATCHIDX_EXBIT_MASK;
-                        code_len  -= MATCHIDX_EXBIT;
-                        code_buf >>= MATCHIDX_EXBIT;
+                        code_len  -= matchidx_bitlen[code];
+                        code_buf >>= matchidx_bitlen[code];
+                        tbuf[rpos++] = matchidx_base[code] + bits;
                     }
                 }
             }
