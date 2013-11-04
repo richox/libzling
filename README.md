@@ -9,18 +9,26 @@ zling shares the same entropy encoder with zlite, but uses an order-1 ROLZ, inst
 
 in practice, zling compresses better and a bit slower than zlite, but decompresses faster.
 
-simple benchmark with __enwik8__(100,000,000 bytes), with mingw-gcc-4.7.3, test was done on ramdisk:
+simple benchmark with __enwik8__(100,000,000 bytes), with clang-3.2 (linux, -O3):
+
+CPU: Intel Xeon E5-2620
+
+MEM: 128GB
 
 <table border="1">
  <tr><td>Tool</td>  <td>Compressed Size</td> <td>Encode</td> <td>Decode</td></tr>
- <tr><td>zling</td> <td>32758615</td>        <td>3.479s</td> <td>1.201s</td></tr>
- <tr><td>gzip</td>  <td>36518322</td>        <td>6.635s</td> <td>1.268s</td></tr>
+ <tr><td>zling</td> <td>32758615</td>        <td>3.87s</td>  <td>1.35s</td></tr>
+ <tr><td>gzip</td>  <td>36518322</td>        <td>8.13s</td>  <td>1.47s</td></tr>
 </table>
 
-simple benchmark with __fp.log__(20,617,071 bytes), with mingw-gcc-4.7.3, test was done on ramdisk:
+simple benchmark with __fp.log__(20,617,071 bytes), with clang-3.2 (linux, -O3):
+
+CPU: Intel Xeon E5-2620
+
+MEM: 128GB
 
 <table border="1">
  <tr><td>Tool</td>  <td>Compressed Size</td> <td>Encode</td> <td>Decode</td></tr>
- <tr><td>zling</td> <td>908879</td>          <td>0.156s</td> <td>0.094s</td></tr>
- <tr><td>gzip</td>  <td>1448582</td>         <td>0.392s</td> <td>0.122s</td></tr>
+ <tr><td>zling</td> <td>908879</td>          <td>0.14s</td> <td>0.09s</td></tr>
+ <tr><td>gzip</td>  <td>1448582</td>         <td>0.41s</td> <td>0.14s</td></tr>
 </table>
