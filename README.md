@@ -17,7 +17,7 @@ MEM: 128GB
 
 <table border="1">
  <tr><td>Tool</td>  <td>Compressed Size</td> <td>Encode</td> <td>Decode</td></tr>
- <tr><td>zling</td> <td>32758615</td>        <td>3.87s</td>  <td>1.35s</td></tr>
+ <tr><td>zling</td> <td>32608050</td>        <td>3.75s</td>  <td>1.36s</td></tr>
  <tr><td>gzip</td>  <td>36518322</td>        <td>8.13s</td>  <td>1.47s</td></tr>
 </table>
 
@@ -29,6 +29,6 @@ MEM: 128GB
 
 <table border="1">
  <tr><td>Tool</td>  <td>Compressed Size</td> <td>Encode</td> <td>Decode</td></tr>
- <tr><td>zling</td> <td>908879</td>          <td>0.14s</td> <td>0.09s</td></tr>
+ <tr><td>zling</td> <td>908161</td>          <td>0.14s</td> <td>0.09s</td></tr>
  <tr><td>gzip</td>  <td>1448582</td>         <td>0.41s</td> <td>0.14s</td></tr>
 </table>
