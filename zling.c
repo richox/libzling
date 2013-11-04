@@ -225,9 +225,9 @@ static int polar_make_decode_table(
 /*******************************************************************************
  * ROLZ
  ******************************************************************************/
-#define BUCKET_ITEM_SIZE        3600
-#define BUCKET_ITEM_HASH        1024
-#define MATCH_DISCARD_MINLEN    1300
+#define BUCKET_ITEM_SIZE        4096
+#define BUCKET_ITEM_HASH        2048
+#define MATCH_DISCARD_MINLEN    1333
 #define MATCH_MAXTRY            8
 #define MATCH_MINLEN            4
 #define MATCH_MAXLEN            (MATCH_MINLEN + (POLAR_SYMBOLS - 256) - 1)
@@ -445,7 +445,7 @@ static const unsigned char matchidx_bitlen[] = {
     /* 16 */ 5, 5,
     /* 18 */ 6, 6,
     /* 20 */ 7, 7,
-    /* 22 */ 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    /* 22 */ 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8
     /* 35 */
 };
 static unsigned char  matchidx_code[BUCKET_ITEM_SIZE];
