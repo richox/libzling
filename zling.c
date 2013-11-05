@@ -246,6 +246,9 @@ struct rolz_bucket_st {
 #define m_hash_context(ptr) (((ptr)[0] * 31337 + (ptr)[1] * 3337 + (ptr)[2] * 337 + (ptr)[3]) % BUCKET_ITEM_HASH)
 #define m_hash_check(ptr)   (((ptr)[0] * 11337 + (ptr)[1] * 1337 + (ptr)[2]) & 0xff)
 
+#define m_cycle_add(x, y)   ((x)+(y) - (-((x)+(y) >= BUCKET_ITEM_SIZE) & BUCKET_ITEM_SIZE))
+#define m_cycle_sub(x, y)   ((x)-(y) + (-((x)-(y) <  0)                & BUCKET_ITEM_SIZE))
+
 static int find_common_length(unsigned char* buf1, unsigned char* buf2, int maxlen) {
     unsigned char* p1 = buf1;
     unsigned char* p2 = buf2;
@@ -260,7 +263,7 @@ static int find_common_length(unsigned char* buf1, unsigned char* buf2, int maxl
 static int rolz_dec_update(struct rolz_bucket_dec_st* rolz_table, unsigned char* buf, int pos) {
     struct rolz_bucket_dec_st* bucket = &rolz_table[buf[pos - 1]];
 
-    bucket->m_head = bucket->m_head + 1 - (-(bucket->m_head + 1 == BUCKET_ITEM_SIZE) & BUCKET_ITEM_SIZE);
+    bucket->m_head = m_cycle_add(bucket->m_head, 1);
     bucket->m_offset[bucket->m_head] = pos;
     return 0;
 }
@@ -268,7 +271,7 @@ static int rolz_dec_update(struct rolz_bucket_dec_st* rolz_table, unsigned char*
 static int rolz_dec_get_offset(struct rolz_bucket_dec_st* rolz_table, unsigned char* buf, int pos, int idx) {
     struct rolz_bucket_dec_st* bucket = &rolz_table[buf[pos - 1]];
     int head = bucket->m_head;
-    int node = head - idx + (-(head < idx) & BUCKET_ITEM_SIZE);
+    int node = m_cycle_sub(head, idx);
     return bucket->m_offset[node];
 }
 
@@ -276,7 +279,7 @@ static int rolz_update(struct rolz_bucket_st* rolz_table, unsigned char* buf, in
     int hash = m_hash_context(buf + pos);
     struct rolz_bucket_st* bucket = &rolz_table[buf[pos - 1]];
 
-    bucket->m_head = bucket->m_head + 1 - (-(bucket->m_head + 1 == BUCKET_ITEM_SIZE) & BUCKET_ITEM_SIZE);
+    bucket->m_head = m_cycle_add(bucket->m_head, 1);
     bucket->m_suffix[bucket->m_head] = bucket->m_hash[hash];
     bucket->m_offset[bucket->m_head] = pos | m_hash_check(buf + pos) << 24;
     bucket->m_hash[hash] = bucket->m_head;
@@ -311,7 +314,7 @@ static int rolz_match(struct rolz_bucket_st* rolz_table, unsigned char* buf, int
             if (buf[pos + maxlen] == buf[offset + maxlen]) {
                 if ((len = find_common_length(buf + pos, buf + offset, MATCH_MAXLEN)) > maxlen) {
                     maxlen = len;
-                    maxidx = bucket->m_head - node + (-(bucket->m_head < node) & BUCKET_ITEM_SIZE);
+                    maxidx = m_cycle_sub(bucket->m_head, node);
                     __DEBUG_LINE__(
                         count_update_match_len += 1;
                     );
