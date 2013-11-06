@@ -380,7 +380,9 @@ static int rolz_encode(
 
     /* rest byte */
     while (opos < olen && ipos < ilen) {
-        obuf[opos++] = ibuf[ipos++];
+        obuf[opos++] = ibuf[ipos];
+        rolz_update(rolz_table, ibuf, ipos);
+        ipos += 1;
     }
     ipos_ref[0] = ipos;
     return opos;
