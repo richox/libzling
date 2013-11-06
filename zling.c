@@ -551,6 +551,7 @@ int main(int argc, char** argv) {
 
         while ((ilen = fread(ibuf, 1, BLOCK_SIZE_IN, stdin)) > 0) {
             fputc(0, stdout); /* flag: start rolz round */
+            size_dst += 1;
             size_src += ilen;
 
             ipos_rolz = 0;
