@@ -29,6 +29,6 @@ MEM: 128GB
 
 <table border="1">
  <tr><td>Tool</td>  <td>Compressed Size</td> <td>Encode</td> <td>Decode</td></tr>
- <tr><td>zling</td> <td>910871</td>          <td>0.15s</td> <td>0.09s</td></tr>
+ <tr><td>zling</td> <td>910873</td>          <td>0.15s</td> <td>0.09s</td></tr>
  <tr><td>gzip</td>  <td>1448582</td>         <td>0.41s</td> <td>0.14s</td></tr>
 </table>
