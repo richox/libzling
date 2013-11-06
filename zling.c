@@ -632,7 +632,6 @@ int main(int argc, char** argv) {
                 fputc(rlen / 256 / 256 / 256 % 256, stdout);
                 fputc(olen / 256 / 256 / 256 % 256, stdout);
                 fwrite(obuf, 1, olen, stdout);
-
                 size_dst += 8;
                 size_dst += olen;
             }
