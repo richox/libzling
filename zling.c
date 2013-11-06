@@ -232,6 +232,9 @@ static int polar_make_decode_table(
 #define MATCH_MINLEN            4
 #define MATCH_MAXLEN            (MATCH_MINLEN + (POLAR_SYMBOLS - 256) - 1)
 
+#define ROLZ_ENC_ALLOC_SIZE     (256 * sizeof(struct rolz_bucket_st))
+#define ROLZ_DEC_ALLOC_SIZE     (256 * sizeof(struct rolz_bucket_dec_st))
+
 struct rolz_bucket_dec_st {
     unsigned int   m_offset[BUCKET_ITEM_SIZE];
     unsigned short m_head;
@@ -260,7 +263,7 @@ static int find_common_length(unsigned char* buf1, unsigned char* buf2, int maxl
     return p1 - buf1;
 }
 
-static int rolz_dec_update(struct rolz_bucket_dec_st* rolz_table, unsigned char* buf, int pos) {
+static int rolz_table_dec_update(struct rolz_bucket_dec_st* rolz_table, unsigned char* buf, int pos) {
     struct rolz_bucket_dec_st* bucket = &rolz_table[buf[pos - 1]];
 
     bucket->m_head = m_cycle_add(bucket->m_head, 1);
@@ -268,7 +271,7 @@ static int rolz_dec_update(struct rolz_bucket_dec_st* rolz_table, unsigned char*
     return 0;
 }
 
-static int rolz_dec_get_offset(struct rolz_bucket_dec_st* rolz_table, unsigned char* buf, int pos, int idx) {
+static int rolz_table_dec_get_offset(struct rolz_bucket_dec_st* rolz_table, unsigned char* buf, int pos, int idx) {
     struct rolz_bucket_dec_st* bucket = &rolz_table[buf[pos - 1]];
     int head = bucket->m_head;
     int node = m_cycle_sub(head, idx);
@@ -337,12 +340,16 @@ static int rolz_match(struct rolz_bucket_st* rolz_table, unsigned char* buf, int
     return 0;
 }
 
-static int rolz_encode(unsigned char* ibuf, unsigned short* obuf, int ilen) {
+static int rolz_encode(
+    struct rolz_bucket_st* rolz_table,
+    unsigned char*  ibuf,
+    unsigned short* obuf,
+    int ilen) {
+
     int olen = 0;
     int pos = 0;
     int match_idx;
     int match_len;
-    struct rolz_bucket_st* rolz_table = calloc(sizeof(*rolz_table), 256);
 
     /* first byte */
     if (pos < ilen) {
@@ -375,30 +382,32 @@ static int rolz_encode(unsigned char* ibuf, unsigned short* obuf, int ilen) {
         obuf[olen++] = ibuf[pos];
         pos++;
     }
-    free(rolz_table);
-
     return olen;
 }
 
-static int rolz_decode(unsigned short* ibuf, unsigned char* obuf, int ilen) {
+static int rolz_decode(
+    struct rolz_bucket_dec_st* rolz_table,
+    unsigned short* ibuf,
+    unsigned char*  obuf,
+    int ilen) {
+
     int olen = 0;
     int pos = 0;
     int match_idx;
     int match_len;
     int match_offset;
-    struct rolz_bucket_dec_st* rolz_table = calloc(sizeof(*rolz_table), 256);
 
     for (pos = 0; pos < ilen; pos++) {
         if (ibuf[pos] < 256) { /* process a literal byte */
             obuf[olen] = ibuf[pos];
-            rolz_dec_update(rolz_table, obuf, olen);
+            rolz_table_dec_update(rolz_table, obuf, olen);
             olen++;
 
         } else { /* process a match */
             match_len = ibuf[pos++] - 256 + MATCH_MINLEN;
             match_idx = ibuf[pos];
-            match_offset = olen - rolz_dec_get_offset(rolz_table, obuf, olen, match_idx);
-            rolz_dec_update(rolz_table, obuf, olen);
+            match_offset = olen - rolz_table_dec_get_offset(rolz_table, obuf, olen, match_idx);
+            rolz_table_dec_update(rolz_table, obuf, olen);
 
             /* update context at current pos with rolz-table updating */
             while (match_len > 0) {
@@ -408,8 +417,6 @@ static int rolz_decode(unsigned short* ibuf, unsigned char* obuf, int ilen) {
             }
         }
     }
-    free(rolz_table);
-
     return olen;
 }
 
@@ -478,6 +485,8 @@ int main(int argc, char** argv) {
     static unsigned short tbuf[BLOCK_SIZE_IN];
     size_t size_src = 0;
     size_t size_dst = 0;
+    struct rolz_bucket_st*     rolz_table_enc = NULL;
+    struct rolz_bucket_dec_st* rolz_table_dec = NULL;
     int ilen;
     int rlen;
     int olen;
@@ -529,12 +538,16 @@ int main(int argc, char** argv) {
 
     /* zling <e/d> (stdin) (stdout) */
     if (argc == 2 && strcmp(argv[1], "e") == 0) {
+        rolz_table_dec = NULL;
+        rolz_table_enc = malloc(ROLZ_ENC_ALLOC_SIZE);
+
         while ((ilen = fread(cbuf, 1, BLOCK_SIZE_IN, stdin)) > 0) {
+            memset(rolz_table_enc, 0, ROLZ_ENC_ALLOC_SIZE);
 
             /* rolz-encode */
             checkpoint = clock();
             {
-                rlen = rolz_encode(cbuf, tbuf, ilen);
+                rlen = rolz_encode(rolz_table_enc, cbuf, tbuf, ilen);
                 olen = 0;
             }
             clock_during_rolz += clock() - checkpoint;
@@ -611,11 +624,16 @@ int main(int argc, char** argv) {
             size_src += ilen;
             size_dst += olen + sizeof(rlen) + sizeof(olen);
         }
+        free(rolz_table_enc);
+        free(rolz_table_dec);
         print_result(size_src, size_dst, 1);
         return 0;
     }
 
     if (argc == 2 && strcmp(argv[1], "d") == 0) {
+        rolz_table_enc = NULL;
+        rolz_table_dec = malloc(ROLZ_DEC_ALLOC_SIZE);
+
         while (
             rlen  = fgetc(stdin),
             olen  = fgetc(stdin),
@@ -629,6 +647,7 @@ int main(int argc, char** argv) {
             !ferror(stdin) &&
             olen < BLOCK_SIZE_OUT && fread(cbuf, 1, olen, stdin) == olen) {
 
+            memset(rolz_table_dec, 0, ROLZ_DEC_ALLOC_SIZE);
             rpos = 0;
             opos = 0;
             code_buf = 0;
@@ -686,7 +705,7 @@ int main(int argc, char** argv) {
             /* rolz-decode */
             checkpoint = clock();
             {
-                ilen = rolz_decode(tbuf, cbuf, rlen);
+                ilen = rolz_decode(rolz_table_dec, tbuf, cbuf, rlen);
             }
             clock_during_rolz += clock() - checkpoint;
 
@@ -695,6 +714,8 @@ int main(int argc, char** argv) {
             size_src += ilen;
             size_dst += olen + sizeof(rlen) + sizeof(olen);
         }
+        free(rolz_table_enc);
+        free(rolz_table_dec);
         print_result(size_src, size_dst, 0);
         return 0;
     }
