@@ -358,8 +358,8 @@ static int rolz_encode(
         obuf[opos++] = ibuf[ipos++];
     }
 
-    while (opos < olen && ipos + MATCH_MAXLEN < ilen) {
-        if (opos + 1 < olen && rolz_match(rolz_table, ibuf, ipos, &match_idx, &match_len)) {
+    while (opos + 1 < olen && ipos + MATCH_MAXLEN < ilen) {
+        if (rolz_match(rolz_table, ibuf, ipos, &match_idx, &match_len)) {
             __DEBUG_LINE__(
                 count_match += 1;
             );
