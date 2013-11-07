@@ -450,16 +450,16 @@ static void print_result(size_t size_src, size_t size_dst, int encode) {
 #define OLEN_POLAR          393216
 
 static const unsigned char matchidx_bitlen[] = {
-    /* 0  */ 0, 0, 0, 0, 0, 0, 0, 0,
-    /* 8  */ 1, 1,
-    /* 10 */ 2, 2,
-    /* 12 */ 3, 3,
-    /* 14 */ 4, 4,
-    /* 16 */ 5, 5,
-    /* 18 */ 6, 6,
-    /* 20 */ 7, 7,
-    /* 22 */ 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8
-    /* 35 */
+    /* 0  */ 0, 0, 0, 0,
+    /* 4  */ 1, 1,
+    /* 6  */ 2, 2,
+    /* 8  */ 3, 3,
+    /* 10 */ 4, 4,
+    /* 12 */ 5, 5,
+    /* 14 */ 6, 6,
+    /* 16 */ 7, 7,
+    /* 18 */ 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8
+    /* 32 */
 };
 static unsigned char  matchidx_code[BUCKET_ITEM_SIZE];
 static unsigned char  matchidx_bits[BUCKET_ITEM_SIZE];
