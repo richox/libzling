@@ -434,8 +434,8 @@ static clock_t clock_during_polar = 0;
 
 static void print_result(size_t size_src, size_t size_dst, int encode) {
     fprintf(stderr, (encode ?
-                     "encode: %u => %u, time=%.3f sec\n" :
-                     "decode: %u <= %u, time=%.3f sec\n"),
+                     "\nencode: %u => %u, time=%.3f sec\n" :
+                     "\ndecode: %u <= %u, time=%.3f sec\n"),
             size_src,
             size_dst,
             (clock() - clock_start) / (double)CLOCKS_PER_SEC);
@@ -445,9 +445,6 @@ static void print_result(size_t size_src, size_t size_dst, int encode) {
     return;
 }
 
-/*******************************************************************************
- * MAIN
- ******************************************************************************/
 #define BLOCK_SIZE_IN       16777216
 #define OLEN_ROLZ           262144
 #define OLEN_POLAR          393216
@@ -638,7 +635,10 @@ int main(int argc, char** argv) {
                 size_dst += 8;
                 size_dst += olen;
             }
-            fprintf(stderr, "%6.2f MB => %6.2f MB\n", size_src / 1e6, size_dst / 1e6);
+            fprintf(stderr, "%6.2f MB => %6.2f MB %.2f%%, %.3f sec\n",
+                    size_src / 1e6,
+                    size_dst / 1e6,
+                    1e2 * size_dst / size_src, (clock() - clock_start) / (double)CLOCKS_PER_SEC);
         }
         free(rolz_table_enc);
         free(rolz_table_dec);
@@ -743,7 +743,10 @@ int main(int argc, char** argv) {
             /* output */
             fwrite(ibuf, 1, ipos_rolz, stdout);
             size_src += ipos_rolz;
-            fprintf(stderr, "%6.2f MB <= %6.2f MB\n", size_src / 1e6, size_dst / 1e6);
+            fprintf(stderr, "%6.2f MB <= %6.2f MB %.2f%%, %.3f sec\n",
+                    size_src / 1e6,
+                    size_dst / 1e6,
+                    1e2 * size_dst / size_src, (clock() - clock_start) / (double)CLOCKS_PER_SEC);
         }
         free(rolz_table_enc);
         free(rolz_table_dec);
