@@ -638,6 +638,7 @@ int main(int argc, char** argv) {
                 size_dst += 8;
                 size_dst += olen;
             }
+            fprintf(stderr, "%6.2f MB => %6.2f MB\n", size_src / 1e6, size_dst / 1e6);
         }
         free(rolz_table_enc);
         free(rolz_table_dec);
@@ -742,6 +743,7 @@ int main(int argc, char** argv) {
             /* output */
             fwrite(ibuf, 1, ipos_rolz, stdout);
             size_src += ipos_rolz;
+            fprintf(stderr, "%6.2f MB <= %6.2f MB\n", size_src / 1e6, size_dst / 1e6);
         }
         free(rolz_table_enc);
         free(rolz_table_dec);
