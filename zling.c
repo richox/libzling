@@ -340,6 +340,21 @@ static int rolz_match(struct rolz_bucket_st* rolz_table, unsigned char* buf, int
     return 0;
 }
 
+static inline void incremental_copy_fast_path(unsigned char* dst, unsigned char* src, int len) {
+    while (dst - src < 8) {
+        *(unsigned long long*)dst = *(unsigned long long*)src;
+        len -= dst - src;
+        dst += dst - src;
+    }
+    while (len > 0) {
+        *(unsigned long long*)dst = *(unsigned long long*)src;
+        len -= 8;
+        dst += 8;
+        src += 8;
+    }
+    return;
+}
+
 static int rolz_encode(
     struct rolz_bucket_st* rolz_table,
     unsigned char*  ibuf,
@@ -401,24 +416,26 @@ static int rolz_decode(
     int match_len;
     int match_offset;
 
-    for (ipos = 0; ipos < ilen; ipos++) {
+    /* first byte */
+    if (opos == 0 && ipos == 0 && ipos < ilen) {
+        obuf[opos++] = ibuf[ipos++];
+    }
+
+    /* rest byte */
+    while (ipos < ilen) {
         if (ibuf[ipos] < 256) { /* process a literal byte */
-            obuf[opos] = ibuf[ipos];
+            obuf[opos] = ibuf[ipos++];
             rolz_table_dec_update(rolz_table, obuf, opos);
             opos++;
 
         } else { /* process a match */
             match_len = ibuf[ipos++] - 256 + MATCH_MINLEN;
-            match_idx = ibuf[ipos];
+            match_idx = ibuf[ipos++];
             match_offset = opos - rolz_table_dec_get_offset(rolz_table, obuf, opos, match_idx);
             rolz_table_dec_update(rolz_table, obuf, opos);
 
-            /* update context at current ipos with rolz-table updating */
-            while (match_len > 0) {
-                obuf[opos] = obuf[opos - match_offset];
-                match_len -= 1;
-                opos++;
-            }
+            incremental_copy_fast_path(&obuf[opos], &obuf[opos - match_offset], match_len);
+            opos += match_len;
         }
     }
     opos_ref[0] = opos;
@@ -459,7 +476,7 @@ static const unsigned char matchidx_bitlen[] = {
     /* 14 */ 6, 6,
     /* 16 */ 7, 7,
     /* 18 */ 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8
-    /* 32 */
+        /* 32 */
 };
 static unsigned char  matchidx_code[BUCKET_ITEM_SIZE];
 static unsigned char  matchidx_bits[BUCKET_ITEM_SIZE];
