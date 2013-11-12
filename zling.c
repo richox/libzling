@@ -215,7 +215,7 @@ static int polar_make_decode_table(
     for (c = 0; c < POLAR_SYMBOLS; c++) {
         if (leng_table[c] > 0) {
             for (i = 0; i + code_table[c] < (1 << POLAR_MAXLEN); i += (1 << leng_table[c])) {
-                decode_table[i + code_table[c]] = leng_table[c] * POLAR_SYMBOLS + c;
+                decode_table[i + code_table[c]] = c;
             }
         }
     }
@@ -503,7 +503,7 @@ static void matchidx_code_init_() {
 int main(int argc, char** argv) {
     static unsigned char  ibuf[BLOCK_SIZE_IN];
     static unsigned short tbuf[OLEN_ROLZ];
-    static unsigned char  obuf[OLEN_POLAR + 8]; /* avoid overflow on decoding */
+    static unsigned char  obuf[OLEN_POLAR + 16]; /* avoid overflow on decoding */
     size_t size_src = 0;
     size_t size_dst = 0;
     struct rolz_bucket_st*     rolz_table_enc = NULL;
@@ -624,10 +624,12 @@ int main(int argc, char** argv) {
                             code_buf += (unsigned long long)bits << code_len;
                             code_len += matchidx_bitlen[code];
                         }
-                        while (code_len >= 8) {
+                        while (code_len >= 24) {
                             obuf[olen++] = code_buf % 256;
-                            code_buf /= 256;
-                            code_len -= 8;
+                            obuf[olen++] = code_buf / 256 % 256;
+                            obuf[olen++] = code_buf / 256 / 256 % 256;
+                            code_buf /= 16777216;
+                            code_len -= 24;
                         }
                     }
 
@@ -728,24 +730,22 @@ int main(int argc, char** argv) {
                             code_buf += (unsigned long long)obuf[opos++] << (code_len + 16);
                             code_len += 24;
                         }
-                        i = decode_table1[code_buf % (1 << POLAR_MAXLEN)];
-                        code_len  -= i / POLAR_SYMBOLS;
-                        code_buf >>= i / POLAR_SYMBOLS;
-                        tbuf[rpos++] = i % POLAR_SYMBOLS;
+                        tbuf[rpos++] = decode_table1[code_buf % (1 << POLAR_MAXLEN)];
+                        code_len  -= leng_table1[tbuf[rpos - 1]];
+                        code_buf >>= leng_table1[tbuf[rpos - 1]];
 
                         if (tbuf[rpos - 1] >= 256) {
                             unsigned char code;
                             unsigned char bits;
 
-                            i = decode_table2[code_buf % (1 << POLAR_MAXLEN)];
-                            code_len  -= i / POLAR_SYMBOLS;
-                            code_buf >>= i / POLAR_SYMBOLS;
-                            code =       i % POLAR_SYMBOLS;
+                            code = decode_table2[code_buf % (1 << POLAR_MAXLEN)];
+                            code_len  -= leng_table2[code];
+                            code_buf >>= leng_table2[code];
                             bits = code_buf & ((1 << matchidx_bitlen[code]) - 1);
 
+                            tbuf[rpos++] = matchidx_base[code] + bits;
                             code_len  -= matchidx_bitlen[code];
                             code_buf >>= matchidx_bitlen[code];
-                            tbuf[rpos++] = matchidx_base[code] + bits;
                         }
                     }
                 }
