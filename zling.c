@@ -722,9 +722,11 @@ int main(int argc, char** argv) {
                     polar_make_decode_table(leng_table2, code_table2, decode_table2);
 
                     while (rpos < rlen) {
-                        while (/* opos < olen && */ code_len < 56) {
-                            code_buf += (unsigned long long)obuf[opos++] << code_len;
-                            code_len += 8;
+                        while (/* opos < olen && */ code_len < 40) {
+                            code_buf += (unsigned long long)obuf[opos++] << (code_len +  0);
+                            code_buf += (unsigned long long)obuf[opos++] << (code_len +  8);
+                            code_buf += (unsigned long long)obuf[opos++] << (code_len + 16);
+                            code_len += 24;
                         }
                         i = decode_table1[code_buf % (1 << POLAR_MAXLEN)];
                         code_len  -= i / POLAR_SYMBOLS;
