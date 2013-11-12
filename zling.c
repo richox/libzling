@@ -475,8 +475,8 @@ static const unsigned char matchidx_bitlen[] = {
     /* 12 */ 5, 5,
     /* 14 */ 6, 6,
     /* 16 */ 7, 7,
-    /* 18 */ 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8
-        /* 32 */
+    /* 18 */ 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    /* 32 */
 };
 static unsigned char  matchidx_code[BUCKET_ITEM_SIZE];
 static unsigned char  matchidx_bits[BUCKET_ITEM_SIZE];
@@ -503,7 +503,7 @@ static void matchidx_code_init_() {
 int main(int argc, char** argv) {
     static unsigned char  ibuf[BLOCK_SIZE_IN];
     static unsigned short tbuf[OLEN_ROLZ];
-    static unsigned char  obuf[OLEN_POLAR];
+    static unsigned char  obuf[OLEN_POLAR + 8]; /* avoid overflow on decoding */
     size_t size_src = 0;
     size_t size_dst = 0;
     struct rolz_bucket_st*     rolz_table_enc = NULL;
@@ -722,7 +722,7 @@ int main(int argc, char** argv) {
                     polar_make_decode_table(leng_table2, code_table2, decode_table2);
 
                     while (rpos < rlen) {
-                        while (opos < olen && code_len < 56) {
+                        while (/* opos < olen && */ code_len < 56) {
                             code_buf += (unsigned long long)obuf[opos++] << code_len;
                             code_len += 8;
                         }
