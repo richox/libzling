@@ -106,7 +106,7 @@ int main(int argc, char** argv) { /* set stdio to binary mode for windows */
 #define m_round_up(x)       while((x)&(-(x)^(x))) { (x) &= (-(x)^(x)); } (x) <<= 1;
 #define m_int_swap(x, y)    {int (_)=(x); (x)=(y); (y)=(_);}
 
-static int polar_make_leng_table(const unsigned int* freq_table, unsigned int* leng_table) {
+static int polar_make_leng_table(const unsigned* freq_table, unsigned* leng_table) {
     int symbols[POLAR_SYMBOLS];
     int i;
     int s;
@@ -175,7 +175,7 @@ MakeTablePass:
     return 0;
 }
 
-static int polar_make_code_table(const unsigned int* leng_table, unsigned int* code_table) {
+static int polar_make_code_table(const unsigned* leng_table, unsigned* code_table) {
     int i;
     int s;
     int code = 0;
@@ -205,8 +205,8 @@ static int polar_make_code_table(const unsigned int* leng_table, unsigned int* c
 }
 
 static int polar_make_decode_table(
-    const unsigned int* leng_table,
-    const unsigned int* code_table, unsigned short* decode_table) {
+    const unsigned* leng_table,
+    const unsigned* code_table, unsigned short* decode_table) {
     int i;
     int c;
 
@@ -236,12 +236,12 @@ static int polar_make_decode_table(
 #define ROLZ_DEC_ALLOC_SIZE     (256 * sizeof(struct rolz_bucket_dec_st))
 
 struct rolz_bucket_dec_st {
-    unsigned int   m_offset[BUCKET_ITEM_SIZE];
+    unsigned       m_offset[BUCKET_ITEM_SIZE];
     unsigned short m_head;
 };
 struct rolz_bucket_st {
     unsigned short m_suffix[BUCKET_ITEM_SIZE];
-    unsigned int   m_offset[BUCKET_ITEM_SIZE];
+    unsigned       m_offset[BUCKET_ITEM_SIZE];
     unsigned short m_head;
     unsigned short m_hash[BUCKET_ITEM_HASH];
 };
@@ -515,12 +515,12 @@ int main(int argc, char** argv) {
     int rpos;
     int opos;
     int i;
-    unsigned int freq_table1[POLAR_SYMBOLS];
-    unsigned int freq_table2[POLAR_SYMBOLS];
-    unsigned int leng_table1[POLAR_SYMBOLS];
-    unsigned int leng_table2[POLAR_SYMBOLS];
-    unsigned int code_table1[POLAR_SYMBOLS];
-    unsigned int code_table2[POLAR_SYMBOLS];
+    unsigned freq_table1[POLAR_SYMBOLS];
+    unsigned freq_table2[POLAR_SYMBOLS];
+    unsigned leng_table1[POLAR_SYMBOLS];
+    unsigned leng_table2[POLAR_SYMBOLS];
+    unsigned code_table1[POLAR_SYMBOLS];
+    unsigned code_table2[POLAR_SYMBOLS];
     unsigned short decode_table1[1 << POLAR_MAXLEN];
     unsigned short decode_table2[1 << POLAR_MAXLEN];
     clock_t checkpoint;
