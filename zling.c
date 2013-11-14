@@ -648,8 +648,6 @@ int main(int argc, char** argv) {
                 fputc(olen / 256 % 256, stdout);
                 fputc(rlen / 256 / 256 % 256, stdout);
                 fputc(olen / 256 / 256 % 256, stdout);
-                fputc(rlen / 256 / 256 / 256 % 256, stdout);
-                fputc(olen / 256 / 256 / 256 % 256, stdout);
                 fwrite(obuf, 1, olen, stdout);
                 size_dst += 8;
                 size_dst += olen;
@@ -689,10 +687,8 @@ int main(int argc, char** argv) {
                 olen  = fgetc(stdin);
                 rlen += fgetc(stdin) * 256;
                 olen += fgetc(stdin) * 256;
-                rlen += fgetc(stdin) * 65536;
-                olen += fgetc(stdin) * 65536;
-                rlen += fgetc(stdin) * 16777216;
-                olen += fgetc(stdin) * 16777216;
+                rlen += fgetc(stdin) * 256 * 256;
+                olen += fgetc(stdin) * 256 * 256;
                 fread(obuf, 1, olen, stdin);
                 size_dst += 8;
                 size_dst += olen;
