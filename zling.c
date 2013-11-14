@@ -451,8 +451,8 @@ static clock_t clock_during_polar = 0;
 
 static void print_result(size_t size_src, size_t size_dst, int encode) {
     fprintf(stderr, (encode ?
-                     "\nencode: %u => %u, time=%.3f sec\n" :
-                     "\ndecode: %u <= %u, time=%.3f sec\n"),
+                     "\nencode: %zu => %zu, time=%.3f sec\n" :
+                     "\ndecode: %zu <= %zu, time=%.3f sec\n"),
             size_src,
             size_dst,
             (clock() - clock_start) / (double)CLOCKS_PER_SEC);
