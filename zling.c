@@ -175,18 +175,18 @@ MakeTablePass:
     return 0;
 }
 
-static int polar_make_code_table(const unsigned* leng_table, unsigned* code_table) {
+static int polar_make_code_table(const unsigned* leng_table, unsigned short* encode_table) {
     int i;
     int s;
     int code = 0;
 
-    memset(code_table, 0, POLAR_SYMBOLS * sizeof(int));
+    memset(encode_table, 0, POLAR_SYMBOLS * sizeof(int));
 
     /* make code for each symbol */
     for (s = 1; s <= POLAR_MAXLEN; s++) {
         for (i = 0; i < POLAR_SYMBOLS; i++) {
             if (leng_table[i] == s) {
-                code_table[i] = code;
+                encode_table[i] = code;
                 code += 1;
             }
         }
@@ -195,18 +195,18 @@ static int polar_make_code_table(const unsigned* leng_table, unsigned* code_tabl
 
     /* reverse each code */
     for (i = 0; i < POLAR_SYMBOLS; i++) {
-        code_table[i] = ((code_table[i] & 0xff00) >> 8 | (code_table[i] & 0x00ff) << 8);
-        code_table[i] = ((code_table[i] & 0xf0f0) >> 4 | (code_table[i] & 0x0f0f) << 4);
-        code_table[i] = ((code_table[i] & 0xcccc) >> 2 | (code_table[i] & 0x3333) << 2);
-        code_table[i] = ((code_table[i] & 0xaaaa) >> 1 | (code_table[i] & 0x5555) << 1);
-        code_table[i] >>= 16 - leng_table[i];
+        encode_table[i] = ((encode_table[i] & 0xff00) >> 8 | (encode_table[i] & 0x00ff) << 8);
+        encode_table[i] = ((encode_table[i] & 0xf0f0) >> 4 | (encode_table[i] & 0x0f0f) << 4);
+        encode_table[i] = ((encode_table[i] & 0xcccc) >> 2 | (encode_table[i] & 0x3333) << 2);
+        encode_table[i] = ((encode_table[i] & 0xaaaa) >> 1 | (encode_table[i] & 0x5555) << 1);
+        encode_table[i] >>= 16 - leng_table[i];
     }
     return 0;
 }
 
 static int polar_make_decode_table(
     const unsigned* leng_table,
-    const unsigned* code_table, unsigned short* decode_table) {
+    const unsigned short* encode_table, unsigned short* decode_table) {
     int i;
     int c;
 
@@ -214,8 +214,8 @@ static int polar_make_decode_table(
 
     for (c = 0; c < POLAR_SYMBOLS; c++) {
         if (leng_table[c] > 0) {
-            for (i = 0; i + code_table[c] < (1 << POLAR_MAXLEN); i += (1 << leng_table[c])) {
-                decode_table[i + code_table[c]] = c;
+            for (i = 0; i + encode_table[c] < (1 << POLAR_MAXLEN); i += (1 << leng_table[c])) {
+                decode_table[i + encode_table[c]] = c;
             }
         }
     }
@@ -451,10 +451,10 @@ static clock_t clock_during_polar = 0;
 
 static void print_result(size_t size_src, size_t size_dst, int encode) {
     fprintf(stderr, (encode ?
-                     "\nencode: %zu => %zu, time=%.3f sec\n" :
-                     "\ndecode: %zu <= %zu, time=%.3f sec\n"),
-            size_src,
-            size_dst,
+                     "\nencode: %u => %u, time=%.3f sec\n" :
+                     "\ndecode: %u <= %u, time=%.3f sec\n"),
+            (unsigned)size_src,
+            (unsigned)size_dst,
             (clock() - clock_start) / (double)CLOCKS_PER_SEC);
 
     fprintf(stderr, "\ttime_rolz:  %.3f sec\n", clock_during_rolz  / (double)CLOCKS_PER_SEC);
@@ -519,8 +519,8 @@ int main(int argc, char** argv) {
     unsigned freq_table2[POLAR_SYMBOLS];
     unsigned leng_table1[POLAR_SYMBOLS];
     unsigned leng_table2[POLAR_SYMBOLS];
-    unsigned code_table1[POLAR_SYMBOLS];
-    unsigned code_table2[POLAR_SYMBOLS];
+    unsigned short encode_table1[POLAR_SYMBOLS];
+    unsigned short encode_table2[POLAR_SYMBOLS];
     unsigned short decode_table1[1 << POLAR_MAXLEN];
     unsigned short decode_table2[1 << POLAR_MAXLEN];
     clock_t checkpoint;
@@ -599,8 +599,8 @@ int main(int argc, char** argv) {
                     }
                     polar_make_leng_table(freq_table1, leng_table1);
                     polar_make_leng_table(freq_table2, leng_table2);
-                    polar_make_code_table(leng_table1, code_table1);
-                    polar_make_code_table(leng_table2, code_table2);
+                    polar_make_code_table(leng_table1, encode_table1);
+                    polar_make_code_table(leng_table2, encode_table2);
 
                     /* write length table */
                     for (i = 0; i < POLAR_SYMBOLS; i += 2) {
@@ -612,14 +612,14 @@ int main(int argc, char** argv) {
 
                     /* encode */
                     for (i = 0; i < rlen; i++) {
-                        code_buf += (unsigned long long)code_table1[tbuf[i]] << code_len;
+                        code_buf += (unsigned long long)encode_table1[tbuf[i]] << code_len;
                         code_len += leng_table1[tbuf[i]];
 
                         if (tbuf[i] >= 256) {
                             unsigned char code = matchidx_code[tbuf[i + 1]];
                             unsigned char bits = matchidx_bits[tbuf[i + 1]];
                             i++;
-                            code_buf += (unsigned long long)code_table2[code] << code_len;
+                            code_buf += (unsigned long long)encode_table2[code] << code_len;
                             code_len += leng_table2[code];
                             code_buf += (unsigned long long)bits << code_len;
                             code_len += matchidx_bitlen[code];
@@ -656,6 +656,7 @@ int main(int argc, char** argv) {
                     size_src / 1e6,
                     size_dst / 1e6,
                     1e2 * size_dst / size_src, (clock() - clock_start) / (double)CLOCKS_PER_SEC);
+            fflush(stderr);
         }
         free(rolz_table_enc);
         free(rolz_table_dec);
@@ -714,10 +715,10 @@ int main(int argc, char** argv) {
                     }
 
                     /* decode */
-                    polar_make_code_table(leng_table1, code_table1);
-                    polar_make_code_table(leng_table2, code_table2);
-                    polar_make_decode_table(leng_table1, code_table1, decode_table1);
-                    polar_make_decode_table(leng_table2, code_table2, decode_table2);
+                    polar_make_code_table(leng_table1, encode_table1);
+                    polar_make_code_table(leng_table2, encode_table2);
+                    polar_make_decode_table(leng_table1, encode_table1, decode_table1);
+                    polar_make_decode_table(leng_table2, encode_table2, decode_table2);
 
                     while (rpos < rlen) {
                         while (/* opos < olen && */ code_len < 40) {
@@ -762,6 +763,7 @@ int main(int argc, char** argv) {
                     size_src / 1e6,
                     size_dst / 1e6,
                     1e2 * size_dst / size_src, (clock() - clock_start) / (double)CLOCKS_PER_SEC);
+            fflush(stderr);
         }
         free(rolz_table_enc);
         free(rolz_table_dec);
