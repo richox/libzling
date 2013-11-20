@@ -30,7 +30,7 @@
  * SUCH DAMAGE.
  */
 
-/* git-tag = 20131104
+/* git-tag = 20131120
  *
  * reference:
  *  ROLZ:
@@ -648,6 +648,8 @@ int main(int argc, char** argv) {
                 fputc(olen / 256 % 256, stdout);
                 fputc(rlen / 256 / 256 % 256, stdout);
                 fputc(olen / 256 / 256 % 256, stdout);
+                fputc(rlen / 256 / 256 / 256 % 256, stdout);
+                fputc(olen / 256 / 256 / 256 % 256, stdout);
                 fwrite(obuf, 1, olen, stdout);
                 size_dst += 8;
                 size_dst += olen;
@@ -690,6 +692,8 @@ int main(int argc, char** argv) {
                 olen += fgetc(stdin) * 256;
                 rlen += fgetc(stdin) * 256 * 256;
                 olen += fgetc(stdin) * 256 * 256;
+                rlen += fgetc(stdin) * 256 * 256 * 256;
+                olen += fgetc(stdin) * 256 * 256 * 256;
                 fread(obuf, 1, olen, stdin);
                 size_dst += 8;
                 size_dst += olen;
