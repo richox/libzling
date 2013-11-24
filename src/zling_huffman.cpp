@@ -1,0 +1,165 @@
+/**
+ * zling:
+ *  light-weight lossless data compression utility.
+ *
+ * Copyright (C) 2012-2013 by Zhang Li <zhangli10 at baidu.com>
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the project nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE PROJECT OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ *
+ * @author zhangli10<zhangli10@baidu.com>
+ * @brief  manipulate huffman encoding.
+ */
+#include "zling_huffman.h"
+
+namespace baidu_zhangli10 {
+namespace zling {
+namespace huffman {
+
+static inline unsigned RoundDown(unsigned x) {
+    while (x & (-x ^ x)) {
+        x &= -x ^ x;
+    }
+    return x;
+}
+static inline unsigned RoundUp(unsigned x) {
+    while (x & (-x ^ x)) {
+        x &= -x ^ x;
+    }
+    return x << 1;
+}
+
+void ZlingMakeLengthTable(const unsigned* freq_table, unsigned* length_table, int scaling) {
+    int symbols[kHuffmanSymbols];
+
+    // init
+    for (int i = 0; i < kHuffmanSymbols; i++) {
+        if (freq_table[i] > 0 && freq_table[i] >> scaling == 0) {
+            length_table[i] = 1;
+        } else {
+            length_table[i] = freq_table[i] >> scaling;
+        }
+    }
+
+    // sort symbols
+    for (int i = 0; i < kHuffmanSymbols; i++) {
+        symbols[i] = i;
+    }
+    for (int i = 0; i < kHuffmanSymbols; i++) {  // simple gnome sort
+        if (i > 0 && length_table[symbols[i - 1]] < length_table[symbols[i]]) {
+            std::swap(symbols[i - 1], symbols[i]);
+            i -= 2;
+        }
+    }
+
+    // calculate total frequency
+    unsigned total = 0;
+    unsigned run = 0;
+
+    for (int i = 0; i < kHuffmanSymbols; i++) {
+        total += length_table[i];
+    }
+    for (int i = 0; i < kHuffmanSymbols; i++) {
+        length_table[i] = RoundDown(length_table[i]);
+        run += length_table[i];
+    }
+    total = RoundUp(total);
+
+    while (run < total) {
+        for (int i = 0; i < kHuffmanSymbols; i++) {
+            if (run + length_table[symbols[i]] <= total) {
+                run += length_table[symbols[i]];
+                length_table[symbols[i]] *= 2;
+            }
+        }
+    }
+
+    // get code length
+    for (int i = 0; i < kHuffmanSymbols; i++) {
+        int codelen = 1;
+
+        if (length_table[i] > 0) {
+            while ((total / length_table[i]) >> (codelen + 1) != 0) {
+                codelen += 1;
+            }
+            length_table[i] = codelen;
+        } else {
+            length_table[i] = 0;
+        }
+
+        // code length too long -- scale and rebuild table
+        if (length_table[i] > unsigned(kHuffmanMaxLen)) {
+            ZlingMakeLengthTable(freq_table, length_table, scaling + 1);
+            return;
+        }
+    }
+    return;
+}
+
+void ZlingMakeEncodeTable(const unsigned* length_table, unsigned short* encode_table) {
+    int code = 0;
+    memset(encode_table, 0, sizeof(encode_table[0]) * kHuffmanSymbols);
+
+    // make code for each symbol
+    for (int codelen = 1; codelen <= kHuffmanMaxLen; codelen++) {
+        for (int i = 0; i < kHuffmanSymbols; i++) {
+            if (length_table[i] == unsigned(codelen)) {
+                encode_table[i] = code;
+                code += 1;
+            }
+        }
+        code *= 2;
+    }
+
+    // reverse each code
+    for (int i = 0; i < kHuffmanSymbols; i++) {
+        encode_table[i] = ((encode_table[i] & 0xff00) >> 8 | (encode_table[i] & 0x00ff) << 8);
+        encode_table[i] = ((encode_table[i] & 0xf0f0) >> 4 | (encode_table[i] & 0x0f0f) << 4);
+        encode_table[i] = ((encode_table[i] & 0xcccc) >> 2 | (encode_table[i] & 0x3333) << 2);
+        encode_table[i] = ((encode_table[i] & 0xaaaa) >> 1 | (encode_table[i] & 0x5555) << 1);
+        encode_table[i] >>= 16 - length_table[i];
+    }
+    return;
+}
+
+void ZlingMakeDecodeTable(const unsigned* length_table, unsigned short* decode_table) {
+    unsigned short encode_table[kHuffmanSymbols];
+
+    memset(decode_table, -1, sizeof(decode_table[0]) * (1 << kHuffmanMaxLen));
+    ZlingMakeEncodeTable(length_table, encode_table);
+
+    for (int c = 0; c < kHuffmanSymbols; c++) {
+        if (length_table[c] > 0) {
+            for (int i = encode_table[c]; i < (1 << kHuffmanMaxLen); i += (1 << length_table[c])) {
+                decode_table[i] = c;
+            }
+        }
+    }
+    return;
+}
+
+}  // namespace huffman
+}  // namespace zling
+}  // namespace baidu_zhangli10
