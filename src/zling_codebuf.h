@@ -32,8 +32,14 @@
  * @author zhangli10<zhangli10@baidu.com>
  * @brief  manipulate code buffer.
  */
-#ifndef ZLING_CODEBUF_H
-#define ZLING_CODEBUF_H
+#ifndef SRC_ZLING_CODEBUF_H
+#define SRC_ZLING_CODEBUF_H
+
+#if HAS_CXX11_SUPPORT
+#include <cstdint>
+#else
+#include <boost/cstdint.hpp>
+#endif
 
 namespace baidu_zhangli10 {
 namespace zling {
@@ -46,20 +52,20 @@ public:
         m_len = 0;
     }
 
-    inline void Input(unsigned code, int len) {
-        m_buf |= (unsigned long long)code << m_len;
+    inline void Input(uint64_t code, int len) {
+        m_buf |= code << m_len;
         m_len += len;
         return;
     }
 
-    inline unsigned Output(int len) {
-        unsigned out = Peek(len);
+    inline uint64_t Output(int len) {
+        uint64_t out = Peek(len);
         m_buf >>= len;
         m_len  -= len;
         return out;
     }
 
-    inline unsigned Peek(int len) const {
+    inline uint64_t Peek(int len) const {
         return m_buf & ~(-1 << len);
     }
 
@@ -68,15 +74,15 @@ public:
     }
 
 private:
-    unsigned long long m_buf;
+    uint64_t m_buf;
     int m_len;
 
     // not copyable
     ZlingCodebuf(const ZlingCodebuf&);
-    ZlingCodebuf& operator= (const ZlingCodebuf&);
+    ZlingCodebuf& operator = (const ZlingCodebuf&);
 };
 
 }  // namespace codebuf
 }  // namespace zling
 }  // namespace baidu_zhangli10
-#endif
+#endif  // SRC_ZLING_CODEBUF_H

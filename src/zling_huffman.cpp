@@ -32,26 +32,26 @@
  * @author zhangli10<zhangli10@baidu.com>
  * @brief  manipulate huffman encoding.
  */
-#include "zling_huffman.h"
+#include "src/zling_huffman.h"
 
 namespace baidu_zhangli10 {
 namespace zling {
 namespace huffman {
 
-static inline unsigned RoundDown(unsigned x) {
+static inline uint32_t RoundDown(uint32_t x) {
     while (x & (-x ^ x)) {
         x &= -x ^ x;
     }
     return x;
 }
-static inline unsigned RoundUp(unsigned x) {
+static inline uint32_t RoundUp(uint32_t x) {
     while (x & (-x ^ x)) {
         x &= -x ^ x;
     }
     return x << 1;
 }
 
-void ZlingMakeLengthTable(const unsigned* freq_table, unsigned* length_table, int scaling) {
+void ZlingMakeLengthTable(const uint32_t* freq_table, uint32_t* length_table, int scaling) {
     int symbols[kHuffmanSymbols];
 
     // init
@@ -75,8 +75,8 @@ void ZlingMakeLengthTable(const unsigned* freq_table, unsigned* length_table, in
     }
 
     // calculate total frequency
-    unsigned total = 0;
-    unsigned run = 0;
+    uint32_t total = 0;
+    uint32_t run = 0;
 
     for (int i = 0; i < kHuffmanSymbols; i++) {
         total += length_table[i];
@@ -110,7 +110,7 @@ void ZlingMakeLengthTable(const unsigned* freq_table, unsigned* length_table, in
         }
 
         // code length too long -- scale and rebuild table
-        if (length_table[i] > unsigned(kHuffmanMaxLen)) {
+        if (length_table[i] > uint32_t(kHuffmanMaxLen)) {
             ZlingMakeLengthTable(freq_table, length_table, scaling + 1);
             return;
         }
@@ -118,14 +118,14 @@ void ZlingMakeLengthTable(const unsigned* freq_table, unsigned* length_table, in
     return;
 }
 
-void ZlingMakeEncodeTable(const unsigned* length_table, unsigned short* encode_table) {
+void ZlingMakeEncodeTable(const uint32_t* length_table, uint16_t* encode_table) {
     int code = 0;
     memset(encode_table, 0, sizeof(encode_table[0]) * kHuffmanSymbols);
 
     // make code for each symbol
     for (int codelen = 1; codelen <= kHuffmanMaxLen; codelen++) {
         for (int i = 0; i < kHuffmanSymbols; i++) {
-            if (length_table[i] == unsigned(codelen)) {
+            if (length_table[i] == uint32_t(codelen)) {
                 encode_table[i] = code;
                 code += 1;
             }
@@ -144,8 +144,8 @@ void ZlingMakeEncodeTable(const unsigned* length_table, unsigned short* encode_t
     return;
 }
 
-void ZlingMakeDecodeTable(const unsigned* length_table, unsigned short* decode_table) {
-    unsigned short encode_table[kHuffmanSymbols];
+void ZlingMakeDecodeTable(const uint32_t* length_table, uint16_t* decode_table) {
+    uint16_t encode_table[kHuffmanSymbols];
 
     memset(decode_table, -1, sizeof(decode_table[0]) * (1 << kHuffmanMaxLen));
     ZlingMakeEncodeTable(length_table, encode_table);

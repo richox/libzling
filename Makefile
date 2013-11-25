@@ -1,4 +1,4 @@
-CXXFLAGS = -Wall -g3 -O3 -static
+CXXFLAGS = -Wall -g3 -O3 -static -I.
 LDFLAGS =  -Wall -g3 -O3
 
 SRCDIR:= src

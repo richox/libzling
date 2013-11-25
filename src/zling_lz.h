@@ -32,10 +32,16 @@
  * @author zhangli10<zhangli10@baidu.com>
  * @brief  manipulate ROLZ (reduced offset Lempel-Ziv) compression.
  */
-#ifndef ZLING_LZ_H
-#define ZLING_LZ_H
+#ifndef SRC_ZLING_LZ_H
+#define SRC_ZLING_LZ_H
 
 #include <cstring>
+
+#if HAS_CXX11_SUPPORT
+#include <cstdint>
+#else
+#include <boost/cstdint.hpp>
+#endif
 
 namespace baidu_zhangli10 {
 namespace zling {
@@ -54,7 +60,7 @@ public:
         Reset();
     }
 
-    int  Encode(unsigned char* ibuf, unsigned short* obuf, int ilen, int olen, int* encpos);
+    int  Encode(unsigned char* ibuf, uint16_t* obuf, int ilen, int olen, int* encpos);
     void Reset();
 
 private:
@@ -62,13 +68,15 @@ private:
     void Update(unsigned char* buf, int pos);
 
     struct ZlingEncodeBucket {
-        unsigned short suffix[kBucketItemSize];
-        unsigned       offset[kBucketItemSize];
-        unsigned short head;
-        unsigned short hash[kBucketItemHash];
+        uint16_t suffix[kBucketItemSize];
+        uint32_t offset[kBucketItemSize];
+        uint16_t head;
+        uint16_t hash[kBucketItemHash];
     };
-
     ZlingEncodeBucket m_buckets[256];
+
+    ZlingRolzEncoder(const ZlingRolzEncoder&);
+    ZlingRolzEncoder& operator = (const ZlingRolzEncoder&);
 };
 
 class ZlingRolzDecoder {
@@ -77,7 +85,7 @@ public:
         Reset();
     }
 
-    int  Decode(unsigned short* ibuf, unsigned char* obuf, int ilen, int* encpos);
+    int  Decode(uint16_t* ibuf, unsigned char* obuf, int ilen, int* encpos);
     void Reset();
 
 private:
@@ -85,14 +93,16 @@ private:
     void Update(unsigned char* buf, int pos);
 
     struct ZlingDecodeBucket {
-        unsigned       offset[kBucketItemSize];
-        unsigned short head;
+        uint32_t offset[kBucketItemSize];
+        uint16_t head;
     };
-
     ZlingDecodeBucket m_buckets[256];
+
+    ZlingRolzDecoder(const ZlingRolzDecoder&);
+    ZlingRolzDecoder& operator = (const ZlingRolzDecoder&);
 };
 
 }  // namespace lz
 }  // namespace zling
 }  // namespace baidu_zhangli10
-#endif
+#endif  // SRC_ZLING_LZ_H

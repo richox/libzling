@@ -32,23 +32,23 @@
  * @author zhangli10<zhangli10@baidu.com>
  * @brief  manipulate ROLZ (reduced offset Lempel-Ziv) compression.
  */
-#include "zling_lz.h"
+#include "src/zling_lz.h"
 
 namespace baidu_zhangli10 {
 namespace zling {
 namespace lz {
 
-static inline unsigned HashContext(unsigned char* ptr) {
+static inline uint32_t HashContext(unsigned char* ptr) {
     return (ptr[0] * 33337 + ptr[1] * 3337 + ptr[2] * 337 + ptr[3]) % kBucketItemHash;
 }
-static inline unsigned HashCheck(unsigned char* ptr) {
+static inline uint32_t HashCheck(unsigned char* ptr) {
     return (ptr[3] * 11117 + ptr[2] * 1117 + ptr[1] * 117 + ptr[0]) & 0xff;
 }
 
-static inline unsigned RollingAdd(unsigned x, unsigned y) {
-    return x + y - (-(x + y >= unsigned(kBucketItemSize)) & kBucketItemSize);
+static inline uint32_t RollingAdd(uint32_t x, uint32_t y) {
+    return x + y - (-(x + y >= uint32_t(kBucketItemSize)) & kBucketItemSize);
 }
-static inline unsigned RollingSub(unsigned x, unsigned y) {
+static inline uint32_t RollingSub(uint32_t x, uint32_t y) {
     return x - y + (-(x < y) & kBucketItemSize);
 }
 
@@ -65,12 +65,12 @@ static inline int GetCommonLength(unsigned char* buf1, unsigned char* buf2, int 
 
 static inline void IncrementalCopyFastPath(unsigned char* src, unsigned char* dst, int len) {
     while (dst - src < 8) {
-        *(unsigned long long*)dst = *(unsigned long long*)src;
+        *reinterpret_cast<uint64_t*>(dst) = *reinterpret_cast<uint64_t*>(src);
         len -= dst - src;
         dst += dst - src;
     }
     while (len > 0) {
-        *(unsigned long long*)dst = *(unsigned long long*)src;
+        *reinterpret_cast<uint64_t*>(dst) = *reinterpret_cast<uint64_t*>(src);
         len -= 8;
         dst += 8;
         src += 8;
@@ -78,7 +78,7 @@ static inline void IncrementalCopyFastPath(unsigned char* src, unsigned char* ds
     return;
 }
 
-int ZlingRolzEncoder::Encode(unsigned char* ibuf, unsigned short* obuf, int ilen, int olen, int* encpos) {
+int ZlingRolzEncoder::Encode(unsigned char* ibuf, uint16_t* obuf, int ilen, int olen, int* encpos) {
     int ipos = encpos[0];
     int opos = 0;
     int match_idx;
@@ -91,7 +91,7 @@ int ZlingRolzEncoder::Encode(unsigned char* ibuf, unsigned short* obuf, int ilen
 
     while (opos + 1 < olen && ipos + kMatchMaxLen < ilen) {
         if (Match(ibuf, ipos, &match_idx, &match_len)) {
-            obuf[opos++] = 256 + match_len - kMatchMinLen;  //encode as match
+            obuf[opos++] = 256 + match_len - kMatchMinLen;  // encode as match
             obuf[opos++] = match_idx;
             Update(ibuf, ipos);
             ipos += match_len;
@@ -130,8 +130,8 @@ int ZlingRolzEncoder::Match(unsigned char* buf, int pos, int* match_idx, int* ma
     node = bucket->hash[hash];
 
     for (i = 0; i < kMatchDepth; i++) {
-        unsigned offset = bucket->offset[node] & 0xffffff;
-        unsigned check = bucket->offset[node] >> 24;
+        uint32_t offset = bucket->offset[node] & 0xffffff;
+        uint32_t check = bucket->offset[node] >> 24;
 
         if (check == HashCheck(buf + pos)) {
             if (buf[pos + maxlen] == buf[offset + maxlen]) {
@@ -168,7 +168,7 @@ void ZlingRolzEncoder::Update(unsigned char* buf, int pos) {
     return;
 }
 
-int ZlingRolzDecoder::Decode(unsigned short* ibuf, unsigned char* obuf, int ilen, int* encpos) {
+int ZlingRolzDecoder::Decode(uint16_t* ibuf, unsigned char* obuf, int ilen, int* encpos) {
     int opos = encpos[0];
     int ipos = 0;
     int match_idx;

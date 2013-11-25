@@ -32,11 +32,17 @@
  * @author zhangli10<zhangli10@baidu.com>
  * @brief  manipulate huffman encoding.
  */
-#ifndef ZLING_HUFFMAN_H
-#define ZLING_HUFFMAN_H
+#ifndef SRC_ZLING_HUFFMAN_H
+#define SRC_ZLING_HUFFMAN_H
 
-#include <cstring>
 #include <algorithm>
+#include <cstring>
+
+#if HAS_CXX11_SUPPORT
+#include <cstdint>
+#else
+#include <boost/cstdint.hpp>
+#endif
 
 namespace baidu_zhangli10 {
 namespace zling {
@@ -45,11 +51,11 @@ namespace huffman {
 static const int kHuffmanSymbols = 384; // should be even
 static const int kHuffmanMaxLen = 15;   // should be < 16 -- packing two length values into a byte
 
-void ZlingMakeLengthTable(const unsigned* freq_table, unsigned* length_table, int scaling);
-void ZlingMakeEncodeTable(const unsigned* length_table, unsigned short* encode_table);
-void ZlingMakeDecodeTable(const unsigned* length_table, unsigned short* decode_table);
+void ZlingMakeLengthTable(const uint32_t* freq_table, uint32_t* length_table, int scaling);
+void ZlingMakeEncodeTable(const uint32_t* length_table, uint16_t* encode_table);
+void ZlingMakeDecodeTable(const uint32_t* length_table, uint16_t* decode_table);
 
 }  // namespace huffman
 }  // namespace zling
 }  // namespace baidu_zhangli10
-#endif
+#endif  // SRC_ZLING_HUFFMAN_H
