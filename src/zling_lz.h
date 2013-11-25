@@ -60,6 +60,13 @@ public:
         Reset();
     }
 
+    /* Encode:
+     *  arg ibuf:   input data
+     *  arg obuf:   output data (compressed)
+     *  arg ilen:   input data length
+     *  arg olen:   input data length
+     *  arg decpos: start encoding at ibuf[encpos], limited by ilen and olen
+     */
     int  Encode(unsigned char* ibuf, uint16_t* obuf, int ilen, int olen, int* encpos);
     void Reset();
 
@@ -85,7 +92,13 @@ public:
         Reset();
     }
 
-    int  Decode(uint16_t* ibuf, unsigned char* obuf, int ilen, int* encpos);
+    /* Decode:
+     *  arg ibuf:   input data (compressed)
+     *  arg obuf:   output data
+     *  arg ilen:   input data length
+     *  arg decpos: start decoding at obuf[decpos], limited by ilen
+     */
+    int  Decode(uint16_t* ibuf, unsigned char* obuf, int ilen, int* decpos);
     void Reset();
 
 private:

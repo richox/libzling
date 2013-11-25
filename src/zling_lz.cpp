@@ -168,8 +168,8 @@ void ZlingRolzEncoder::Update(unsigned char* buf, int pos) {
     return;
 }
 
-int ZlingRolzDecoder::Decode(uint16_t* ibuf, unsigned char* obuf, int ilen, int* encpos) {
-    int opos = encpos[0];
+int ZlingRolzDecoder::Decode(uint16_t* ibuf, unsigned char* obuf, int ilen, int* decpos) {
+    int opos = decpos[0];
     int ipos = 0;
     int match_idx;
     int match_len;
@@ -197,7 +197,7 @@ int ZlingRolzDecoder::Decode(uint16_t* ibuf, unsigned char* obuf, int ilen, int*
             opos += match_len;
         }
     }
-    encpos[0] = opos;
+    decpos[0] = opos;
     return ipos;
 }
 

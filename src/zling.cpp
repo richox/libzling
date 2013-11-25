@@ -292,7 +292,7 @@ int main(int argc, char** argv) {
             fgetc(stdin);
             size_dst += 1;
 
-            int encpos = 0;
+            int decpos = 0;
             lzdecoder->Reset();
 
             while (ungetc(fgetc(stdin), stdin) == 1) {  // flag: continue rolz round
@@ -361,14 +361,14 @@ int main(int argc, char** argv) {
                 // rolz-decode
                 checkpoint = clock();
                 {
-                    rlen = lzdecoder->Decode(tbuf, ibuf, rlen, &encpos);
+                    rlen = lzdecoder->Decode(tbuf, ibuf, rlen, &decpos);
                 }
                 clock_during_rolz += clock() - checkpoint;
             }
 
             // output
-            fwrite(ibuf, 1, encpos, stdout);
-            size_src += encpos;
+            fwrite(ibuf, 1, decpos, stdout);
+            size_src += decpos;
             fprintf(stderr, "%6.2f MB <= %6.2f MB %.2f%%, %.3f sec\n",
                     size_src / 1e6,
                     size_dst / 1e6,
