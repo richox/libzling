@@ -46,10 +46,12 @@ static inline uint32_t HashCheck(unsigned char* ptr) {
 }
 
 static inline uint32_t RollingAdd(uint32_t x, uint32_t y) {
-    return x + y - (-(x + y >= uint32_t(kBucketItemSize)) & kBucketItemSize);
+    //return x + y - (-(x + y >= uint32_t(kBucketItemSize)) & kBucketItemSize);
+    return (x + y) & (kBucketItemSize - 1);
 }
 static inline uint32_t RollingSub(uint32_t x, uint32_t y) {
-    return x - y + (-(x < y) & kBucketItemSize);
+    // return x - y + (-(x < y) & kBucketItemSize);
+    return (x - y) & (kBucketItemSize - 1);
 }
 
 static inline int GetCommonLength(unsigned char* buf1, unsigned char* buf2, int maxlen) {
