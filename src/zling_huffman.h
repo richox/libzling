@@ -51,8 +51,18 @@ namespace huffman {
 static const int kHuffmanSymbols = 384; // should be even
 static const int kHuffmanMaxLen = 15;   // should be < 16 -- packing two length values into a byte
 
+// ZlingMakeDecodeTable: build canonical length table from frequency table,
+//  both tables should have kHuffmanSymbols elements.
+//
+//  arg freq_table   frequency_table
+//  arg length_table length_table
+//  arg scaling      scaling factor
 void ZlingMakeLengthTable(const uint32_t* freq_table, uint32_t* length_table, int scaling);
+
+// ZlingMakeEncodeTable: build encode table from canonical length table.
 void ZlingMakeEncodeTable(const uint32_t* length_table, uint16_t* encode_table);
+
+// ZlingMakeDecodeTable: build encode table from canonical length table.
 void ZlingMakeDecodeTable(const uint32_t* length_table, uint16_t* decode_table);
 
 }  // namespace huffman
