@@ -2,14 +2,13 @@ CXXFLAGS = -Wall -g3 -O3 -static -I.
 LDFLAGS =  -Wall -g3 -O3
 
 SRCDIR:= src
-BINDIR:= bin
 OBJDIR:= obj
 
 DIR:= $(shell mkdir -p $(OBJDIR) $(BINDIR))
 SRC:= $(shell echo src/*.cpp)
 OBJ:= $(addprefix $(OBJDIR)/, $(addsuffix .o, $(basename $(notdir $(SRC)))))
 DEP:= $(addprefix $(OBJDIR)/, $(addsuffix .d, $(basename $(notdir $(SRC)))))
-BIN:= bin/zling
+BIN:= zling
 
 $(BIN): $(OBJ)
 	@ echo -e " linking..."
@@ -18,8 +17,8 @@ $(BIN): $(OBJ)
 	@
 	@ ### run test ### \
 		cat /usr/bin/gcc | \
-		bin/zling e | \
-		bin/zling d | \
+		./zling e | \
+		./zling d | \
 		cmp /usr/bin/gcc
 
 -include $(DEP)
@@ -37,7 +36,7 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.cpp
 clean:
 	@ echo -n -e " cleaning..."
 	@ rm -rf $(DEP) $(OBJ) $(BIN)
-	@ rmdir -p --ignore-fail-on-non-empty $(OBJDIR) $(BINDIR)
+	@ rmdir -p --ignore-fail-on-non-empty $(OBJDIR)
 	@ echo -e " done."
 
 .IGNORE: clean
