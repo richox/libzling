@@ -48,6 +48,9 @@
 #include <io.h>
 #endif
 
+#define PRIu64 "llu"
+#define PRId64 "lld"
+
 #include "src/zling_codebuf.h"
 #include "src/zling_huffman.h"
 #include "src/zling_lz.h"
@@ -270,7 +273,7 @@ int main(int argc, char** argv) {
             return -1;
         }
         fprintf(stderr,
-                "\nencode: %llu => %llu, time=%.3f sec\n"
+                "\nencode: %"PRIu64" => %"PRIu64", time=%.3f sec\n"
                 "\ttime_rolz:  %.3f sec\n"
                 "\ttime_huffman: %.3f sec\n",
                 size_src,
