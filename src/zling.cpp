@@ -120,9 +120,9 @@ static inline uint32_t IdxFromCodeBits(uint32_t code, uint32_t bits) {
 }
 
 int main(int argc, char** argv) {
-    static unsigned char  ibuf[kBlockSizeIn];
-    static uint16_t tbuf[kBlockSizeRolz];
-    static unsigned char  obuf[kBlockSizeHuffman + 16];  // avoid overflow on decoding
+    static unsigned char ibuf[kBlockSizeIn];
+    static unsigned char obuf[kBlockSizeHuffman + 16];  // avoid overflow on decoding
+    static uint16_t      tbuf[kBlockSizeRolz];
     uint64_t size_src = 0;
     uint64_t size_dst = 0;
     int ilen = 0;
