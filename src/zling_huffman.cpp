@@ -51,7 +51,10 @@ static inline uint32_t RoundUp(uint32_t x) {
     return x << 1;
 }
 
-void ZlingMakeLengthTable(const uint32_t* freq_table, uint32_t* length_table, int scaling) {
+void ZlingMakeLengthTable(const uint32_t* freq_table,
+                          uint32_t* length_table,
+                          int scaling,
+                          int max_codelen) {
     int symbols[kHuffmanSymbols];
 
     // init
@@ -110,22 +113,22 @@ void ZlingMakeLengthTable(const uint32_t* freq_table, uint32_t* length_table, in
         }
 
         // code length too long -- scale and rebuild table
-        if (length_table[i] > uint32_t(kHuffmanMaxLen)) {
-            ZlingMakeLengthTable(freq_table, length_table, scaling + 1);
+        if (length_table[i] > static_cast<uint32_t>(max_codelen)) {
+            ZlingMakeLengthTable(freq_table, length_table, scaling + 1, max_codelen);
             return;
         }
     }
     return;
 }
 
-void ZlingMakeEncodeTable(const uint32_t* length_table, uint16_t* encode_table) {
+void ZlingMakeEncodeTable(const uint32_t* length_table, uint16_t* encode_table, int max_codelen) {
     int code = 0;
     memset(encode_table, 0, sizeof(encode_table[0]) * kHuffmanSymbols);
 
     // make code for each symbol
-    for (int codelen = 1; codelen <= kHuffmanMaxLen; codelen++) {
+    for (int codelen = 1; codelen <= max_codelen; codelen++) {
         for (int i = 0; i < kHuffmanSymbols; i++) {
-            if (length_table[i] == uint32_t(codelen)) {
+            if (length_table[i] == static_cast<uint32_t>(codelen)) {
                 encode_table[i] = code;
                 code += 1;
             }
@@ -144,15 +147,15 @@ void ZlingMakeEncodeTable(const uint32_t* length_table, uint16_t* encode_table) 
     return;
 }
 
-void ZlingMakeDecodeTable(const uint32_t* length_table, uint16_t* decode_table) {
+void ZlingMakeDecodeTable(const uint32_t* length_table, uint16_t* decode_table, int max_codelen) {
     uint16_t encode_table[kHuffmanSymbols];
+    memset(decode_table, -1, sizeof(decode_table[0]) * (1 << max_codelen));
 
-    memset(decode_table, -1, sizeof(decode_table[0]) * (1 << kHuffmanMaxLen));
-    ZlingMakeEncodeTable(length_table, encode_table);
+    ZlingMakeEncodeTable(length_table, encode_table, max_codelen);
 
     for (int c = 0; c < kHuffmanSymbols; c++) {
         if (length_table[c] > 0) {
-            for (int i = encode_table[c]; i < (1 << kHuffmanMaxLen); i += (1 << length_table[c])) {
+            for (int i = encode_table[c]; i < (1 << max_codelen); i += (1 << length_table[c])) {
                 decode_table[i] = c;
             }
         }

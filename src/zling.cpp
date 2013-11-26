@@ -63,8 +63,10 @@ using baidu_zhangli10::zling::lz::ZlingRolzEncoder;
 using baidu_zhangli10::zling::lz::ZlingRolzDecoder;
 
 using baidu_zhangli10::zling::huffman::kHuffmanSymbols;
-using baidu_zhangli10::zling::huffman::kHuffmanMaxLen;
 using baidu_zhangli10::zling::lz::kBucketItemSize;
+
+static const int kHuffmanMaxLen1   = 15;
+static const int kHuffmanMaxLen2   = 8;
 
 static const int kBlockSizeIn      = 16777216;
 static const int kBlockSizeRolz    = 262144;
@@ -208,11 +210,11 @@ int main(int argc, char** argv) {
                             freq_table2[matchidx_code[tbuf[++i]]] += 1;
                         }
                     }
-                    ZlingMakeLengthTable(freq_table1, length_table1, 0);
-                    ZlingMakeLengthTable(freq_table2, length_table2, 0);
+                    ZlingMakeLengthTable(freq_table1, length_table1, 0, kHuffmanMaxLen1);
+                    ZlingMakeLengthTable(freq_table2, length_table2, 0, kHuffmanMaxLen2);
 
-                    ZlingMakeEncodeTable(length_table1, encode_table1);
-                    ZlingMakeEncodeTable(length_table2, encode_table2);
+                    ZlingMakeEncodeTable(length_table1, encode_table1, kHuffmanMaxLen1);
+                    ZlingMakeEncodeTable(length_table2, encode_table2, kHuffmanMaxLen2);
 
                     // write length table
                     for (int i = 0; i < kHuffmanSymbols; i += 2) {
@@ -234,7 +236,8 @@ int main(int argc, char** argv) {
                                 IdxToBits(tbuf[i]),
                                 IdxToBitlen(tbuf[i]));
                         }
-                        while (codebuf.GetLength() >= 24) {
+                        while (codebuf.GetLength() >= 32) {
+                            obuf[opos++] = codebuf.Output(8);
                             obuf[opos++] = codebuf.Output(8);
                             obuf[opos++] = codebuf.Output(8);
                             obuf[opos++] = codebuf.Output(8);
@@ -321,8 +324,8 @@ int main(int argc, char** argv) {
                     int opos = 0;
                     uint32_t length_table1[kHuffmanSymbols];
                     uint32_t length_table2[kHuffmanSymbols];
-                    uint16_t decode_table1[1 << kHuffmanMaxLen];
-                    uint16_t decode_table2[1 << kHuffmanMaxLen];
+                    uint16_t decode_table1[1 << kHuffmanMaxLen1];
+                    uint16_t decode_table2[1 << kHuffmanMaxLen2];
 
                     // read length table
                     for (int i = 0; i < kHuffmanSymbols; i += 2) {
@@ -335,21 +338,22 @@ int main(int argc, char** argv) {
                         length_table2[i + 1] = obuf[opos] % 16;
                         opos++;
                     }
-                    ZlingMakeDecodeTable(length_table1, decode_table1);
-                    ZlingMakeDecodeTable(length_table2, decode_table2);
+                    ZlingMakeDecodeTable(length_table1, decode_table1, kHuffmanMaxLen1);
+                    ZlingMakeDecodeTable(length_table2, decode_table2, kHuffmanMaxLen2);
 
                     // decode
                     for (int i = 0; i < rlen; i++) {
-                        while (/* opos < olen && */ codebuf.GetLength() < 40) {
+                        while (/* opos < olen && */ codebuf.GetLength() < 32) {
+                            codebuf.Input(obuf[opos++], 8);
                             codebuf.Input(obuf[opos++], 8);
                             codebuf.Input(obuf[opos++], 8);
                             codebuf.Input(obuf[opos++], 8);
                         }
-                        tbuf[i] = decode_table1[codebuf.Peek(kHuffmanMaxLen)];
+                        tbuf[i] = decode_table1[codebuf.Peek(kHuffmanMaxLen1)];
                         codebuf.Output(length_table1[tbuf[i]]);
 
                         if (tbuf[i] >= 256) {
-                            uint32_t code = decode_table2[codebuf.Peek(kHuffmanMaxLen)];
+                            uint32_t code = decode_table2[codebuf.Peek(kHuffmanMaxLen2)];
                             uint32_t bitlen = IdxBitlenFromCode(code);
                             codebuf.Output(length_table2[code]);
                             tbuf[++i] = IdxFromCodeBits(code, codebuf.Output(bitlen));
