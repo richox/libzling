@@ -87,7 +87,7 @@ int ZlingRolzEncoder::Encode(unsigned char* ibuf, uint16_t* obuf, int ilen, int 
     int match_len;
 
     // first byte
-    if (opos < olen && ipos == 0 && ipos < ilen) {
+    if (ipos == 0 && opos < olen && ipos < ilen) {
         obuf[opos++] = ibuf[ipos++];
     }
 
@@ -178,7 +178,7 @@ int ZlingRolzDecoder::Decode(uint16_t* ibuf, unsigned char* obuf, int ilen, int*
     int match_offset;
 
     // first byte
-    if (opos == 0 && ipos == 0 && ipos < ilen) {
+    if (ipos == 0 && ipos < ilen) {
         obuf[opos++] = ibuf[ipos++];
     }
 
