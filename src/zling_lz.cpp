@@ -127,7 +127,6 @@ int ZlingRolzEncoder::Match(unsigned char* buf, int pos, int* match_idx, int* ma
     int hash = HashContext(buf + pos);
     int node;
     int i;
-    int len;
     ZlingEncodeBucket* bucket = &m_buckets[buf[pos - 1]];
 
     node = bucket->hash[hash];
@@ -136,14 +135,14 @@ int ZlingRolzEncoder::Match(unsigned char* buf, int pos, int* match_idx, int* ma
         uint32_t offset = bucket->offset[node] & 0xffffff;
         uint32_t check = bucket->offset[node] >> 24;
 
-        if (check == HashCheck(buf + pos)) {
-            if (buf[pos + maxlen] == buf[offset + maxlen]) {
-                if ((len = GetCommonLength(buf + pos, buf + offset, kMatchMaxLen)) > maxlen) {
-                    maxlen = len;
-                    maxidx = RollingSub(bucket->head, node);
-                    if (maxlen == kMatchMaxLen) {
-                        break;
-                    }
+        if (check == HashCheck(buf + pos) && buf[pos + maxlen] == buf[offset + maxlen]) {
+            int len = GetCommonLength(buf + pos, buf + offset, kMatchMaxLen);
+
+            if (len > maxlen) {
+                maxlen = len;
+                maxidx = RollingSub(bucket->head, node);
+                if (maxlen == kMatchMaxLen) {
+                    break;
                 }
             }
         }
