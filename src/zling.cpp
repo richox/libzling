@@ -199,10 +199,15 @@ static int main_encode() {
                         IdxToBitlen(tbuf[i]));
                 }
                 while (codebuf.GetLength() >= 32) {
+#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+                    *reinterpret_cast<uint32_t*>(obuf + opos) = codebuf.Output(32);
+                    opos += 4;
+#else
                     obuf[opos++] = codebuf.Output(8);
                     obuf[opos++] = codebuf.Output(8);
                     obuf[opos++] = codebuf.Output(8);
                     obuf[opos++] = codebuf.Output(8);
+#endif
                 }
             }
             while (codebuf.GetLength() > 0) {
@@ -305,10 +310,15 @@ static int main_decode() {
             // decode
             for (int i = 0; i < rlen; i++) {
                 while (/* opos < olen && */ codebuf.GetLength() < 32) {
+#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+                    codebuf.Input(*reinterpret_cast<uint32_t*>(obuf + opos), 32);
+                    opos += 4;
+#else
                     codebuf.Input(obuf[opos++], 8);
                     codebuf.Input(obuf[opos++], 8);
                     codebuf.Input(obuf[opos++], 8);
                     codebuf.Input(obuf[opos++], 8);
+#endif
                 }
                 tbuf[i] = decode_table1[codebuf.Peek(kHuffmanMaxLen1)];
                 codebuf.Output(length_table1[tbuf[i]]);

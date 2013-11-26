@@ -83,8 +83,6 @@ static inline void IncrementalCopyFastPath(unsigned char* src, unsigned char* ds
 int ZlingRolzEncoder::Encode(unsigned char* ibuf, uint16_t* obuf, int ilen, int olen, int* encpos) {
     int ipos = encpos[0];
     int opos = 0;
-    int match_idx;
-    int match_len;
 
     // first byte
     if (ipos == 0 && opos < olen && ipos < ilen) {
@@ -92,6 +90,9 @@ int ZlingRolzEncoder::Encode(unsigned char* ibuf, uint16_t* obuf, int ilen, int 
     }
 
     while (opos + 1 < olen && ipos + kMatchMaxLen < ilen) {
+        int match_idx;
+        int match_len;
+
         if (Match(ibuf, ipos, &match_idx, &match_len)) {
             obuf[opos++] = 256 + match_len - kMatchMinLen;  // encode as match
             obuf[opos++] = match_idx;
@@ -192,10 +193,10 @@ int ZlingRolzDecoder::Decode(uint16_t* ibuf, unsigned char* obuf, int ilen, int*
         } else {  // process a match
             match_len = ibuf[ipos++] - 256 + kMatchMinLen;
             match_idx = ibuf[ipos++];
-            match_offset = opos - GetMatch(obuf, opos, match_idx);
+            match_offset = GetMatch(obuf, opos, match_idx);
             Update(obuf, opos);
 
-            IncrementalCopyFastPath(&obuf[opos - match_offset], &obuf[opos], match_len);
+            IncrementalCopyFastPath(&obuf[match_offset], &obuf[opos], match_len);
             opos += match_len;
         }
     }
