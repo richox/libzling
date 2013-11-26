@@ -5,8 +5,8 @@
 #include "src/zling_lz.h"
 
 TEST(ZlingLZ, Main) {
-    baidu_zhangli10::zling::lz::ZlingRolzEncoder encoder;
-    baidu_zhangli10::zling::lz::ZlingRolzDecoder decoder;
+    baidu::zling::lz::ZlingRolzEncoder encoder;
+    baidu::zling::lz::ZlingRolzDecoder decoder;
 
     char data[2][256] = {
             "0.1.2.3.4.5.6.7.8.9"

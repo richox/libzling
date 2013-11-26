@@ -34,7 +34,7 @@
  */
 #include "src/zling_lz.h"
 
-namespace baidu_zhangli10 {
+namespace baidu {
 namespace zling {
 namespace lz {
 
@@ -225,4 +225,4 @@ void ZlingRolzDecoder::Update(unsigned char* buf, int pos) {
 
 }  // namespace lz
 }  // namespace zling
-}  // namespace baidu_zhangli10
+}  // namespace baidu

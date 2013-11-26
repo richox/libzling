@@ -52,22 +52,16 @@
 #include "src/zling_huffman.h"
 #include "src/zling_lz.h"
 
-using baidu_zhangli10::zling::codebuf::ZlingCodebuf;
-using baidu_zhangli10::zling::huffman::ZlingMakeLengthTable;
-using baidu_zhangli10::zling::huffman::ZlingMakeEncodeTable;
-using baidu_zhangli10::zling::huffman::ZlingMakeDecodeTable;
-using baidu_zhangli10::zling::lz::ZlingRolzEncoder;
-using baidu_zhangli10::zling::lz::ZlingRolzDecoder;
+using baidu::zling::codebuf::ZlingCodebuf;
+using baidu::zling::huffman::ZlingMakeLengthTable;
+using baidu::zling::huffman::ZlingMakeEncodeTable;
+using baidu::zling::huffman::ZlingMakeDecodeTable;
+using baidu::zling::lz::ZlingRolzEncoder;
+using baidu::zling::lz::ZlingRolzDecoder;
 
-using baidu_zhangli10::zling::huffman::kHuffmanSymbols;
-using baidu_zhangli10::zling::lz::kBucketItemSize;
-
-static const int kHuffmanMaxLen1   = 15;
-static const int kHuffmanMaxLen2   = 8;
-
-static const int kBlockSizeIn      = 16777216;
-static const int kBlockSizeRolz    = 262144;
-static const int kBlockSizeHuffman = 393216;
+using baidu::zling::lz::kMatchMaxLen;
+using baidu::zling::lz::kMatchMinLen;
+using baidu::zling::lz::kBucketItemSize;
 
 static const unsigned char matchidx_bitlen[] = {
     /* 0 */ 0, 0, 0, 0,
@@ -121,6 +115,15 @@ static inline uint32_t IdxFromCodeBits(uint32_t code, uint32_t bits) {
     return matchidx_base[code] | bits;
 }
 
+static const int kHuffmanCodes1    = 256 + (kMatchMaxLen - kMatchMinLen + 1);
+static const int kHuffmanCodes2    = kMatchidxCodeSymbols;
+static const int kHuffmanMaxLen1   = 15;
+static const int kHuffmanMaxLen2   = 8;
+
+static const int kBlockSizeIn      = 16777216;
+static const int kBlockSizeRolz    = 262144;
+static const int kBlockSizeHuffman = 393216;
+
 static unsigned char ibuf[kBlockSizeIn];
 static unsigned char obuf[kBlockSizeHuffman + 16];  // avoid overflow on decoding
 static uint16_t      tbuf[kBlockSizeRolz];
@@ -132,10 +135,9 @@ static int main_encode() {
     int ilen = 0;
     int rlen = 0;
     int olen = 0;
-    clock_t clock_start          = clock();
-    clock_t clock_during_rolz    = 0;
-    clock_t clock_during_huffman = 0;
-    clock_t checkpoint;
+    clock_t clock_start = clock();
+
+    InitMatchidxCode();
 
     while ((ilen = fread(ibuf, 1, kBlockSizeIn, stdin)) > 0) {
         fputc(0, stdout);  // flag: start rolz round
@@ -149,68 +151,64 @@ static int main_encode() {
             fputc(1, stdout);  // flag: continue rolz round
             size_dst += 1;
 
-            checkpoint = clock();  // rolz-encode
-            {
-                rlen = lzencoder->Encode(ibuf, tbuf, ilen, kBlockSizeRolz, &encpos);
+            // ROLZ encode
+            // ============================================================
+            rlen = lzencoder->Encode(ibuf, tbuf, ilen, kBlockSizeRolz, &encpos);
+
+            // HUFFMAN encode
+            // ============================================================
+            ZlingCodebuf codebuf;
+            int opos = 0;
+            uint32_t freq_table1[kHuffmanCodes1] = {0};
+            uint32_t freq_table2[kHuffmanCodes2] = {0};
+            uint32_t length_table1[kHuffmanCodes1];
+            uint32_t length_table2[kHuffmanCodes2];
+            uint16_t encode_table1[kHuffmanCodes1];
+            uint16_t encode_table2[kHuffmanCodes2];
+
+            for (int i = 0; i < rlen; i++) {
+                freq_table1[tbuf[i]] += 1;
+                if (tbuf[i] >= 256) {
+                    freq_table2[matchidx_code[tbuf[++i]]] += 1;
+                }
             }
-            clock_during_rolz += clock() - checkpoint;
+            ZlingMakeLengthTable(freq_table1, length_table1, 0, kHuffmanCodes1, kHuffmanMaxLen1);
+            ZlingMakeLengthTable(freq_table2, length_table2, 0, kHuffmanCodes2, kHuffmanMaxLen2);
 
-            checkpoint = clock();  // huffman-encode
-            {
-                ZlingCodebuf codebuf;
-                int opos = 0;
-                uint32_t freq_table1[kHuffmanSymbols] = {0};
-                uint32_t freq_table2[kHuffmanSymbols] = {0};
-                uint32_t length_table1[kHuffmanSymbols] = {0};
-                uint32_t length_table2[kHuffmanSymbols] = {0};
-                uint16_t encode_table1[kHuffmanSymbols] = {0};
-                uint16_t encode_table2[kHuffmanSymbols] = {0};
+            ZlingMakeEncodeTable(length_table1, encode_table1, kHuffmanCodes1, kHuffmanMaxLen1);
+            ZlingMakeEncodeTable(length_table2, encode_table2, kHuffmanCodes2, kHuffmanMaxLen2);
 
-                for (int i = 0; i < rlen; i++) {
-                    freq_table1[tbuf[i]] += 1;
-                    if (tbuf[i] >= 256) {
-                        freq_table2[matchidx_code[tbuf[++i]]] += 1;
-                    }
+            // write length table
+            for (int i = 0; i < kHuffmanCodes1 + (kHuffmanCodes1 % 2); i += 2) {
+                obuf[opos++] = length_table1[i] * 16 + length_table1[i + 1];
+            }
+            for (int i = 0; i < kHuffmanCodes2 + (kHuffmanCodes2 % 2); i += 2) {
+                obuf[opos++] = length_table2[i] * 16 + length_table2[i + 1];
+            }
+
+            // encode
+            for (int i = 0; i < rlen; i++) {
+                codebuf.Input(encode_table1[tbuf[i]], length_table1[tbuf[i]]);
+                if (tbuf[i] >= 256) {
+                    i++;
+                    codebuf.Input(
+                        encode_table2[IdxToCode(tbuf[i])],
+                        length_table2[IdxToCode(tbuf[i])]);
+                    codebuf.Input(
+                        IdxToBits(tbuf[i]),
+                        IdxToBitlen(tbuf[i]));
                 }
-                ZlingMakeLengthTable(freq_table1, length_table1, 0, kHuffmanMaxLen1);
-                ZlingMakeLengthTable(freq_table2, length_table2, 0, kHuffmanMaxLen2);
-
-                ZlingMakeEncodeTable(length_table1, encode_table1, kHuffmanMaxLen1);
-                ZlingMakeEncodeTable(length_table2, encode_table2, kHuffmanMaxLen2);
-
-                // write length table
-                for (int i = 0; i < kHuffmanSymbols; i += 2) {
-                    obuf[opos++] = length_table1[i] * 16 + length_table1[i + 1];
-                }
-                for (int i = 0; i < kMatchidxCodeSymbols; i += 2) {
-                    obuf[opos++] = length_table2[i] * 16 + length_table2[i + 1];
-                }
-
-                // encode
-                for (int i = 0; i < rlen; i++) {
-                    codebuf.Input(encode_table1[tbuf[i]], length_table1[tbuf[i]]);
-                    if (tbuf[i] >= 256) {
-                        i++;
-                        codebuf.Input(
-                            encode_table2[IdxToCode(tbuf[i])],
-                            length_table2[IdxToCode(tbuf[i])]);
-                        codebuf.Input(
-                            IdxToBits(tbuf[i]),
-                            IdxToBitlen(tbuf[i]));
-                    }
-                    while (codebuf.GetLength() >= 32) {
-                        obuf[opos++] = codebuf.Output(8);
-                        obuf[opos++] = codebuf.Output(8);
-                        obuf[opos++] = codebuf.Output(8);
-                        obuf[opos++] = codebuf.Output(8);
-                    }
-                }
-                while (codebuf.GetLength() > 0) {
+                while (codebuf.GetLength() >= 32) {
+                    obuf[opos++] = codebuf.Output(8);
+                    obuf[opos++] = codebuf.Output(8);
+                    obuf[opos++] = codebuf.Output(8);
                     obuf[opos++] = codebuf.Output(8);
                 }
-                olen = opos;
             }
-            clock_during_huffman += clock() - checkpoint;
+            while (codebuf.GetLength() > 0) {
+                obuf[opos++] = codebuf.Output(8);
+            }
+            olen = opos;
 
             // output
             fputc(rlen / 16777216 % 256, stdout);
@@ -238,14 +236,10 @@ static int main_encode() {
         return -1;
     }
     fprintf(stderr,
-            "\nencode: %llu => %llu, time=%.3f sec\n"
-            "\ttime_rolz:  %.3f sec\n"
-            "\ttime_huffman: %.3f sec\n",
+            "\nencode: %llu => %llu, time=%.3f sec\n",
             size_src,
             size_dst,
-            (clock() - clock_start) * 1.0 / CLOCKS_PER_SEC,
-            clock_during_rolz    * 1.0 / CLOCKS_PER_SEC,
-            clock_during_huffman * 1.0 / CLOCKS_PER_SEC);
+            (clock() - clock_start) * 1.0 / CLOCKS_PER_SEC);
     return 0;
 }
 
@@ -255,10 +249,9 @@ static int main_decode() {
     uint64_t size_dst = 0;
     int rlen = 0;
     int olen = 0;
-    clock_t clock_start          = clock();
-    clock_t clock_during_rolz    = 0;
-    clock_t clock_during_huffman = 0;
-    clock_t checkpoint;
+    clock_t clock_start = clock();
+
+    InitMatchidxCode();
 
     while (ungetc(fgetc(stdin), stdin) == 0) {  // flag: start rolz round
         fgetc(stdin);
@@ -286,57 +279,51 @@ static int main_decode() {
             size_dst += 8;
             size_dst += olen;
 
-            // huffman-decode
-            checkpoint = clock();
-            {
-                ZlingCodebuf codebuf;
-                int opos = 0;
-                uint32_t length_table1[kHuffmanSymbols] = {0};
-                uint32_t length_table2[kHuffmanSymbols] = {0};
-                uint16_t decode_table1[1 << kHuffmanMaxLen1] = {0};
-                uint16_t decode_table2[1 << kHuffmanMaxLen2] = {0};
+            // HUFFMAN DECODE
+            // ============================================================
+            ZlingCodebuf codebuf;
+            int opos = 0;
+            uint32_t length_table1[kHuffmanCodes1] = {0};
+            uint32_t length_table2[kHuffmanCodes2] = {0};
+            uint16_t decode_table1[1 << kHuffmanMaxLen1];
+            uint16_t decode_table2[1 << kHuffmanMaxLen2];
 
-                // read length table
-                for (int i = 0; i < kHuffmanSymbols; i += 2) {
-                    length_table1[i] =     obuf[opos] / 16;
-                    length_table1[i + 1] = obuf[opos] % 16;
-                    opos++;
+            // read length table
+            for (int i = 0; i < kHuffmanCodes1 + (kHuffmanCodes1 % 2); i += 2) {
+                length_table1[i] =     obuf[opos] / 16;
+                length_table1[i + 1] = obuf[opos] % 16;
+                opos++;
+            }
+            for (int i = 0; i < kHuffmanCodes2 + (kHuffmanCodes2 % 2); i += 2) {
+                length_table2[i] =     obuf[opos] / 16;
+                length_table2[i + 1] = obuf[opos] % 16;
+                opos++;
+            }
+            ZlingMakeDecodeTable(length_table1, decode_table1, kHuffmanCodes1, kHuffmanMaxLen1);
+            ZlingMakeDecodeTable(length_table2, decode_table2, kHuffmanCodes2, kHuffmanMaxLen2);
+
+            // decode
+            for (int i = 0; i < rlen; i++) {
+                while (/* opos < olen && */ codebuf.GetLength() < 32) {
+                    codebuf.Input(obuf[opos++], 8);
+                    codebuf.Input(obuf[opos++], 8);
+                    codebuf.Input(obuf[opos++], 8);
+                    codebuf.Input(obuf[opos++], 8);
                 }
-                for (int i = 0; i < kMatchidxCodeSymbols; i += 2) {
-                    length_table2[i] =     obuf[opos] / 16;
-                    length_table2[i + 1] = obuf[opos] % 16;
-                    opos++;
-                }
-                ZlingMakeDecodeTable(length_table1, decode_table1, kHuffmanMaxLen1);
-                ZlingMakeDecodeTable(length_table2, decode_table2, kHuffmanMaxLen2);
+                tbuf[i] = decode_table1[codebuf.Peek(kHuffmanMaxLen1)];
+                codebuf.Output(length_table1[tbuf[i]]);
 
-                // decode
-                for (int i = 0; i < rlen; i++) {
-                    while (/* opos < olen && */ codebuf.GetLength() < 32) {
-                        codebuf.Input(obuf[opos++], 8);
-                        codebuf.Input(obuf[opos++], 8);
-                        codebuf.Input(obuf[opos++], 8);
-                        codebuf.Input(obuf[opos++], 8);
-                    }
-                    tbuf[i] = decode_table1[codebuf.Peek(kHuffmanMaxLen1)];
-                    codebuf.Output(length_table1[tbuf[i]]);
-
-                    if (tbuf[i] >= 256) {
-                        uint32_t code = decode_table2[codebuf.Peek(kHuffmanMaxLen2)];
-                        uint32_t bitlen = IdxBitlenFromCode(code);
-                        codebuf.Output(length_table2[code]);
-                        tbuf[++i] = IdxFromCodeBits(code, codebuf.Output(bitlen));
-                    }
+                if (tbuf[i] >= 256) {
+                    uint32_t code = decode_table2[codebuf.Peek(kHuffmanMaxLen2)];
+                    uint32_t bitlen = IdxBitlenFromCode(code);
+                    codebuf.Output(length_table2[code]);
+                    tbuf[++i] = IdxFromCodeBits(code, codebuf.Output(bitlen));
                 }
             }
-            clock_during_huffman += clock() - checkpoint;
 
-            // rolz-decode
-            checkpoint = clock();
-            {
-                rlen = lzdecoder->Decode(tbuf, ibuf, rlen, &decpos);
-            }
-            clock_during_rolz += clock() - checkpoint;
+            // ROLZ decode
+            // ============================================================
+            rlen = lzdecoder->Decode(tbuf, ibuf, rlen, &decpos);
         }
 
         // output
@@ -356,14 +343,10 @@ static int main_decode() {
     }
 
     fprintf(stderr,
-            "\ndecode: %llu <= %llu, time=%.3f sec\n"
-            "\ttime_rolz:    %.3f sec\n"
-            "\ttime_huffman: %.3f sec\n",
+            "\ndecode: %llu <= %llu, time=%.3f sec\n",
             size_src,
             size_dst,
-            (clock() - clock_start) * 1.0 / CLOCKS_PER_SEC,
-            clock_during_rolz    * 1.0 / CLOCKS_PER_SEC,
-            clock_during_huffman * 1.0 / CLOCKS_PER_SEC);
+            (clock() - clock_start) * 1.0 / CLOCKS_PER_SEC);
     return 0;
 }
 
@@ -400,15 +383,8 @@ int main(int argc, char** argv) {
     }
 
     // zling <e/d> (stdin) (stdout)
-    if (argc == 2 && strcmp(argv[1], "e") == 0) {
-        InitMatchidxCode();
-        return main_encode();
-    }
-
-    if (argc == 2 && strcmp(argv[1], "d") == 0) {
-        InitMatchidxCode();
-        return main_decode();
-    }
+    if (argc == 2 && strcmp(argv[1], "e") == 0) return main_encode();
+    if (argc == 2 && strcmp(argv[1], "d") == 0) return main_decode();
 
     // help message
     fprintf(stderr, "usage:\n");

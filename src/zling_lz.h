@@ -43,7 +43,7 @@
 #include <boost/cstdint.hpp>
 #endif
 
-namespace baidu_zhangli10 {
+namespace baidu {
 namespace zling {
 namespace lz {
 
@@ -52,7 +52,7 @@ static const int kBucketItemHash = 2048;
 static const int kMatchDiscardMinLen = 1333;
 static const int kMatchDepth = 8;
 static const int kMatchMinLen = 4;
-static const int kMatchMaxLen = 120;
+static const int kMatchMaxLen = 259;
 
 class ZlingRolzEncoder {
 public:
@@ -117,5 +117,5 @@ private:
 
 }  // namespace lz
 }  // namespace zling
-}  // namespace baidu_zhangli10
+}  // namespace baidu
 #endif  // SRC_ZLING_LZ_H

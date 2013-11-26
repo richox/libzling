@@ -41,7 +41,7 @@
 #include <boost/cstdint.hpp>
 #endif
 
-namespace baidu_zhangli10 {
+namespace baidu {
 namespace zling {
 namespace codebuf {
 
@@ -84,5 +84,5 @@ private:
 
 }  // namespace codebuf
 }  // namespace zling
-}  // namespace baidu_zhangli10
+}  // namespace baidu
 #endif  // SRC_ZLING_CODEBUF_H

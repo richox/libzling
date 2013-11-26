@@ -5,7 +5,7 @@
 #include "src/zling_codebuf.h"
 
 TEST(ZlingCodebuf, Main) {
-    baidu_zhangli10::zling::codebuf::ZlingCodebuf codebuf;
+    baidu::zling::codebuf::ZlingCodebuf codebuf;
     EXPECT_EQ(codebuf.GetLength(), 0);
 
     codebuf.Input(0x101, 12);
