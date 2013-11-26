@@ -67,14 +67,22 @@ void ZlingMakeLengthTable(const uint32_t* freq_table,
         }
     }
 
-    // sort symbols
+    // sort symbols (using CombSort)
+    int delta = max_codes;
+    int nswap = 1;
+
     for (int i = 0; i < max_codes; i++) {
         symbols[i] = i;
     }
-    for (int i = 0; i < max_codes; i++) {  // simple gnome sort
-        if (i > 0 && length_table[symbols[i - 1]] < length_table[symbols[i]]) {
-            std::swap(symbols[i - 1], symbols[i]);
-            i -= 2;
+    while (delta + nswap > 1) {
+        nswap = 0;
+        delta = static_cast<int>(delta / 1.33);
+
+        for (int i = 0; i + delta < max_codes; i++) {
+            if (length_table[symbols[i]] < length_table[symbols[i + delta]]) {
+                nswap = 0;
+                std::swap(symbols[i], symbols[i + delta]);
+            }
         }
     }
 
