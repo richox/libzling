@@ -178,7 +178,6 @@ int ZlingRolzDecoder::Decode(uint16_t* ibuf, unsigned char* obuf, int ilen, int*
     int match_offset;
 
     // first byte
-<<<<<<< HEAD
     if (opos == 0 && ipos < ilen) {
         obuf[opos++] = ibuf[ipos++];
     }

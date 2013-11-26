@@ -96,7 +96,7 @@ static inline void InitMatchidxCode() {
         matchidx_code[i] = code;
         matchidx_bits[i] = bits;
 
-        if ((++bits) >> matchidx_bitlen[code] != 0) {
+        if (i + 1 < kBucketItemSize && (++bits) >> matchidx_bitlen[code] != 0) {
             bits = 0;
             matchidx_base[++code] = i + 1;
         }
