@@ -76,7 +76,7 @@ void ZlingMakeLengthTable(const uint32_t* freq_table,
     }
     while (delta + nswap > 1) {
         nswap = 0;
-        delta = static_cast<int>(delta / 1.33);
+        delta = int(delta / 1.33);
 
         for (int i = 0; i + delta < max_codes; i++) {
             if (length_table[symbols[i]] < length_table[symbols[i + delta]]) {
@@ -86,45 +86,38 @@ void ZlingMakeLengthTable(const uint32_t* freq_table,
         }
     }
 
-    // calculate total frequency
-    uint32_t total = 0;
+    // round frequency
+    uint32_t sum = 0;
     uint32_t run = 0;
 
     for (int i = 0; i < max_codes; i++) {
-        total += length_table[i];
+        sum += length_table[i];
     }
     for (int i = 0; i < max_codes; i++) {
         length_table[i] = RoundDown(length_table[i]);
         run += length_table[i];
     }
-    total = RoundUp(total);
+    sum = RoundUp(sum);
 
-    while (run < total) {
+    while (run < sum) {
         for (int i = 0; i < max_codes; i++) {
-            if (run + length_table[symbols[i]] <= total) {
+            if (run + length_table[symbols[i]] <= sum) {
                 run += length_table[symbols[i]];
-                length_table[symbols[i]] *= 2;
+                length_table[symbols[i]] += length_table[symbols[i]];
             }
         }
     }
 
     // get code length
     for (int i = 0; i < max_codes; i++) {
-        int codelen = 1;
-
         if (length_table[i] > 0) {
-            while ((total / length_table[i]) >> (codelen + 1) != 0) {
-                codelen += 1;
-            }
-            length_table[i] = codelen;
-        } else {
-            length_table[i] = 0;
-        }
+            length_table[i] = 31 - (__builtin_clz(sum / length_table[i]));
 
-        // code length too long -- scale and rebuild table
-        if (length_table[i] > static_cast<uint32_t>(max_codelen)) {
-            ZlingMakeLengthTable(freq_table, length_table, scaling + 1, max_codes, max_codelen);
-            return;
+            // code length too long? -- scale and rebuild table
+            if (length_table[i] > uint32_t(max_codelen)) {
+                ZlingMakeLengthTable(freq_table, length_table, ++scaling, max_codes, max_codelen);
+                return;
+            }
         }
     }
     return;

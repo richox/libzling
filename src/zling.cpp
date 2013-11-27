@@ -277,7 +277,7 @@ static int main_decode() {
             olen += fgetc(stdin) * 256;
             rlen += fgetc(stdin);
             olen += fgetc(stdin);
-            if (fread(obuf, 1, olen, stdin) != static_cast<size_t>(olen)) {
+            if (fread(obuf, 1, olen, stdin) != size_t(olen)) {
                 fprintf(stderr, "error: reading block with size '%d' error.", olen);
                 return -1;
             }
