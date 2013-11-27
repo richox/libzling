@@ -9,7 +9,9 @@ clean:
 zling_test: \
 	zling_codebuf_test.cpp \
 	zling_lz_test.cpp \
-	../src/zling_lz.cpp
+	zling_huffman_test.cpp \
+	../src/zling_lz.cpp \
+	../src/zling_huffman.cpp
 	$(CXX) -o $@ $^ $(CPPFLAGS) $(LDFLAGS)
 
 .PHONY: build
