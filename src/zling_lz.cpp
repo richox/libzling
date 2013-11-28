@@ -39,10 +39,7 @@ namespace zling {
 namespace lz {
 
 static inline uint32_t HashContext(unsigned char* ptr) {
-    return (ptr[0] * 33337 + ptr[1] * 3337 + ptr[2] * 337 + ptr[3]) % kBucketItemHash;
-}
-static inline uint32_t HashCheck(unsigned char* ptr) {
-    return (ptr[0] * 33337 + ptr[1] * 3337 + ptr[2] * 337 + ptr[3]) / kBucketItemHash & 0xff;
+    return (ptr[0] * 33337 + ptr[1] * 3337 + ptr[2] * 337 + ptr[3]);
 }
 
 static inline uint32_t RollingAdd(uint32_t x, uint32_t y) {
@@ -123,17 +120,19 @@ int ZlingRolzEncoder::Match(unsigned char* buf, int pos, int* match_idx, int* ma
     int maxlen = kMatchMinLen - 1;
     int maxidx = 0;
     int hash = HashContext(buf + pos);
+    int hash_check   = hash / kBucketItemHash % 256;
+    int hash_context = hash % kBucketItemHash;
     int node;
     int i;
     ZlingEncodeBucket* bucket = &m_buckets[buf[pos - 1]];
 
-    node = bucket->hash[hash];
+    node = bucket->hash[hash_context];
 
     for (i = 0; i < kMatchDepth; i++) {
-        uint32_t offset = bucket->offset[node] & 0xffffff;
-        uint32_t check = bucket->offset[node] >> 24;
+        int offset = bucket->offset[node] & 0xffffff;
+        int check = bucket->offset[node] >> 24;
 
-        if (check == HashCheck(buf + pos) && buf[pos + maxlen] == buf[offset + maxlen]) {
+        if (check == hash_check && buf[pos + maxlen] == buf[offset + maxlen]) {
             int len = GetCommonLength(buf + pos, buf + offset, kMatchMaxLen);
 
             if (len > maxlen) {
@@ -144,7 +143,7 @@ int ZlingRolzEncoder::Match(unsigned char* buf, int pos, int* match_idx, int* ma
                 }
             }
         }
-        if (offset <= (bucket->offset[bucket->suffix[node]] & 0xffffff)) {
+        if (offset <= int(bucket->offset[bucket->suffix[node]] & 0xffffff)) {
             break;
         }
         node = bucket->suffix[node];
@@ -159,12 +158,14 @@ int ZlingRolzEncoder::Match(unsigned char* buf, int pos, int* match_idx, int* ma
 
 void ZlingRolzEncoder::Update(unsigned char* buf, int pos) {
     int hash = HashContext(buf + pos);
+    int hash_check   = hash / kBucketItemHash % 256;
+    int hash_context = hash % kBucketItemHash;
     ZlingEncodeBucket* bucket = &m_buckets[buf[pos - 1]];
 
     bucket->head = RollingAdd(bucket->head, 1);
-    bucket->suffix[bucket->head] = bucket->hash[hash];
-    bucket->offset[bucket->head] = pos | HashCheck(buf + pos) << 24;
-    bucket->hash[hash] = bucket->head;
+    bucket->suffix[bucket->head] = bucket->hash[hash_context];
+    bucket->offset[bucket->head] = pos | hash_check << 24;
+    bucket->hash[hash_context] = bucket->head;
     return;
 }
 
