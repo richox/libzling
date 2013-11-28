@@ -42,15 +42,13 @@ static inline uint32_t HashContext(unsigned char* ptr) {
     return (ptr[0] * 33337 + ptr[1] * 3337 + ptr[2] * 337 + ptr[3]) % kBucketItemHash;
 }
 static inline uint32_t HashCheck(unsigned char* ptr) {
-    return (ptr[3] * 11117 + ptr[2] * 1117 + ptr[1] * 117 + ptr[0]) & 0xff;
+    return (ptr[0] * 33337 + ptr[1] * 3337 + ptr[2] * 337 + ptr[3]) / kBucketItemHash & 0xff;
 }
 
 static inline uint32_t RollingAdd(uint32_t x, uint32_t y) {
-    // return x + y - (-(x + y >= uint32_t(kBucketItemSize)) & kBucketItemSize);
     return (x + y) & (kBucketItemSize - 1);
 }
 static inline uint32_t RollingSub(uint32_t x, uint32_t y) {
-    // return x - y + (-(x < y) & kBucketItemSize);
     return (x - y) & (kBucketItemSize - 1);
 }
 

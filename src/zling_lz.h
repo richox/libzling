@@ -48,7 +48,7 @@ namespace zling {
 namespace lz {
 
 static const int kBucketItemSize = 4096;
-static const int kBucketItemHash = 2048;
+static const int kBucketItemHash = 8192;
 static const int kMatchDiscardMinLen = 1333;
 static const int kMatchDepth = 8;
 static const int kMatchMinLen = 4;
