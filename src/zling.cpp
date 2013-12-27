@@ -179,10 +179,10 @@ static int main_encode() {
             ZlingMakeEncodeTable(length_table2, encode_table2, kHuffmanCodes2, kHuffmanMaxLen2);
 
             // write length table
-            for (int i = 0; i < kHuffmanCodes1 + (kHuffmanCodes1 % 2); i += 2) {
+            for (int i = 0; i < kHuffmanCodes1; i += 2) {
                 obuf[opos++] = length_table1[i] * 16 + length_table1[i + 1];
             }
-            for (int i = 0; i < kHuffmanCodes2 + (kHuffmanCodes2 % 2); i += 2) {
+            for (int i = 0; i < kHuffmanCodes2; i += 2) {
                 obuf[opos++] = length_table2[i] * 16 + length_table2[i + 1];
             }
             if (opos % 4 != 0) obuf[opos++] = 0;  // keep aligned
@@ -298,12 +298,12 @@ static int main_decode() {
             uint16_t decode_table2[1 << kHuffmanMaxLen2];
 
             // read length table
-            for (int i = 0; i < kHuffmanCodes1 + (kHuffmanCodes1 % 2); i += 2) {
+            for (int i = 0; i < kHuffmanCodes1; i += 2) {
                 length_table1[i] =     obuf[opos] / 16;
                 length_table1[i + 1] = obuf[opos] % 16;
                 opos++;
             }
-            for (int i = 0; i < kHuffmanCodes2 + (kHuffmanCodes2 % 2); i += 2) {
+            for (int i = 0; i < kHuffmanCodes2; i += 2) {
                 length_table2[i] =     obuf[opos] / 16;
                 length_table2[i + 1] = obuf[opos] % 16;
                 opos++;
