@@ -185,6 +185,10 @@ static int main_encode() {
             for (int i = 0; i < kHuffmanCodes2 + (kHuffmanCodes2 % 2); i += 2) {
                 obuf[opos++] = length_table2[i] * 16 + length_table2[i + 1];
             }
+            if (opos % 4 != 0) obuf[opos++] = 0;  // keep aligned
+            if (opos % 4 != 0) obuf[opos++] = 0;  // keep aligned
+            if (opos % 4 != 0) obuf[opos++] = 0;  // keep aligned
+            if (opos % 4 != 0) obuf[opos++] = 0;  // keep aligned
 
             // encode
             for (int i = 0; i < rlen; i++) {
@@ -304,6 +308,11 @@ static int main_decode() {
                 length_table2[i + 1] = obuf[opos] % 16;
                 opos++;
             }
+            if (opos % 4 != 0) opos++;  // keep aligned
+            if (opos % 4 != 0) opos++;  // keep aligned
+            if (opos % 4 != 0) opos++;  // keep aligned
+            if (opos % 4 != 0) opos++;  // keep aligned
+
             ZlingMakeDecodeTable(length_table1, decode_table1, kHuffmanCodes1, kHuffmanMaxLen1);
             ZlingMakeDecodeTable(length_table2, decode_table2, kHuffmanCodes2, kHuffmanMaxLen2);
 
