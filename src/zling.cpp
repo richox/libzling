@@ -115,8 +115,8 @@ static inline uint32_t IdxFromCodeBits(uint32_t code, uint32_t bits) {
     return matchidx_base[code] | bits;
 }
 
-static const int kHuffmanCodes1    = 256 + (kMatchMaxLen - kMatchMinLen + 1);
-static const int kHuffmanCodes2    = kMatchidxCodeSymbols;
+static const int kHuffmanCodes1    = 256 + (kMatchMaxLen - kMatchMinLen + 1);  // must be even
+static const int kHuffmanCodes2    = kMatchidxCodeSymbols;                     // must be even
 static const int kHuffmanMaxLen1   = 15;
 static const int kHuffmanMaxLen2   = 8;
 
