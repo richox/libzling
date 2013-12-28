@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 /**
  * zling:
  *  light-weight lossless data compression utility.
@@ -112,6 +114,12 @@ void ZlingMakeLengthTable(const uint32_t* freq_table,
     for (int i = 0; i < max_codes; i++) {
         if (length_table[i] > 0) {
             length_table[i] = 31 - (__builtin_clz(sum / length_table[i]));
+
+            // bugfix: 20131229
+            // only happens when all symbols except i have zero frequency (sum == length_table[i])
+            if (freq_table[i] > 0 && length_table[i] == 0) {
+                length_table[i] = 1;
+            }
 
             // code length too long? -- scale and rebuild table
             if (length_table[i] > uint32_t(max_codelen)) {

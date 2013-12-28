@@ -169,7 +169,7 @@ static int main_encode() {
             for (int i = 0; i < rlen; i++) {
                 freq_table1[tbuf[i]] += 1;
                 if (tbuf[i] >= 256) {
-                    freq_table2[matchidx_code[tbuf[++i]]] += 1;
+                    freq_table2[IdxToCode(tbuf[++i])] += 1;
                 }
             }
             ZlingMakeLengthTable(freq_table1, length_table1, 0, kHuffmanCodes1, kHuffmanMaxLen1);
@@ -177,6 +177,11 @@ static int main_encode() {
 
             ZlingMakeEncodeTable(length_table1, encode_table1, kHuffmanCodes1, kHuffmanMaxLen1);
             ZlingMakeEncodeTable(length_table2, encode_table2, kHuffmanCodes2, kHuffmanMaxLen2);
+
+            uint16_t decode_table1[1 << kHuffmanMaxLen1];
+            uint16_t decode_table2[1 << kHuffmanMaxLen2];
+            ZlingMakeDecodeTable(length_table1, decode_table1, kHuffmanCodes1, kHuffmanMaxLen1);
+            ZlingMakeDecodeTable(length_table2, decode_table2, kHuffmanCodes2, kHuffmanMaxLen2);
 
             // write length table
             for (int i = 0; i < kHuffmanCodes1; i += 2) {
