@@ -66,7 +66,7 @@ public:
     }
 
     inline uint64_t Peek(int len) const {
-        return m_buf & ~(-1 << len);
+        return m_buf & ~(-1ull << len);
     }
 
     inline int GetLength() const {
