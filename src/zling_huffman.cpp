@@ -174,7 +174,7 @@ void ZlingMakeDecodeTable(
     memset(decode_table, -1, sizeof(decode_table[0]) * (1 << max_codelen));
 
     for (int c = 0; c < max_codes; c++) {
-        if (length_table[c] > 0) {
+        if (length_table[c] > 0 && length_table[c] <= max_codelen) {
             for (int i = encode_table[c]; i < (1 << max_codelen); i += (1 << length_table[c])) {
                 decode_table[i] = c;
             }

@@ -294,7 +294,8 @@ static int main_decode() {
             int opos = 0;
             uint32_t length_table1[kHuffmanCodes1] = {0};
             uint32_t length_table2[kHuffmanCodes2] = {0};
-            uint16_t decode_table1[1 << kHuffmanMaxLen1];
+            uint16_t decode_table1_1[256];
+            uint16_t decode_table1_2[1 << kHuffmanMaxLen1];
             uint16_t decode_table2[1 << kHuffmanMaxLen2];
 
             // read length table
@@ -313,7 +314,8 @@ static int main_decode() {
             if (opos % 4 != 0) opos++;  // keep aligned
             if (opos % 4 != 0) opos++;  // keep aligned
 
-            ZlingMakeDecodeTable(length_table1, decode_table1, kHuffmanCodes1, kHuffmanMaxLen1);
+            ZlingMakeDecodeTable(length_table1, decode_table1_1, kHuffmanCodes1, 8);
+            ZlingMakeDecodeTable(length_table1, decode_table1_2, kHuffmanCodes1, kHuffmanMaxLen1);
             ZlingMakeDecodeTable(length_table2, decode_table2, kHuffmanCodes2, kHuffmanMaxLen2);
 
             // decode
@@ -329,7 +331,9 @@ static int main_decode() {
                     codebuf.Input(obuf[opos++], 8);
 #endif
                 }
-                tbuf[i] = decode_table1[codebuf.Peek(kHuffmanMaxLen1)];
+                if ((tbuf[i] = decode_table1_1[codebuf.Peek(8)]) == uint16_t(-1)) {
+                    tbuf[i] = decode_table1_2[codebuf.Peek(kHuffmanMaxLen1)];
+                }
                 codebuf.Output(length_table1[tbuf[i]]);
 
                 if (tbuf[i] >= 256) {
