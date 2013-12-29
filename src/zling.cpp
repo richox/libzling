@@ -178,11 +178,6 @@ static int main_encode() {
             ZlingMakeEncodeTable(length_table1, encode_table1, kHuffmanCodes1, kHuffmanMaxLen1);
             ZlingMakeEncodeTable(length_table2, encode_table2, kHuffmanCodes2, kHuffmanMaxLen2);
 
-            uint16_t decode_table1[1 << kHuffmanMaxLen1];
-            uint16_t decode_table2[1 << kHuffmanMaxLen2];
-            ZlingMakeDecodeTable(length_table1, decode_table1, kHuffmanCodes1, kHuffmanMaxLen1);
-            ZlingMakeDecodeTable(length_table2, decode_table2, kHuffmanCodes2, kHuffmanMaxLen2);
-
             // write length table
             for (int i = 0; i < kHuffmanCodes1; i += 2) {
                 obuf[opos++] = length_table1[i] * 16 + length_table1[i + 1];
