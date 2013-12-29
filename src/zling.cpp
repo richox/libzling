@@ -115,10 +115,11 @@ static inline uint32_t IdxFromCodeBits(uint32_t code, uint32_t bits) {
     return matchidx_base[code] | bits;
 }
 
-static const int kHuffmanCodes1    = 256 + (kMatchMaxLen - kMatchMinLen + 1);  // must be even
-static const int kHuffmanCodes2    = kMatchidxCodeSymbols;                     // must be even
-static const int kHuffmanMaxLen1   = 15;
-static const int kHuffmanMaxLen2   = 8;
+static const int kHuffmanCodes1      = 256 + (kMatchMaxLen - kMatchMinLen + 1);  // must be even
+static const int kHuffmanCodes2      = kMatchidxCodeSymbols;                     // must be even
+static const int kHuffmanMaxLen1     = 15;
+static const int kHuffmanMaxLen2     = 8;
+static const int kHuffmanMaxLen1Fast = 10;
 
 static const int kBlockSizeIn      = 16777216;
 static const int kBlockSizeRolz    = 262144;
@@ -294,7 +295,7 @@ static int main_decode() {
             int opos = 0;
             uint32_t length_table1[kHuffmanCodes1] = {0};
             uint32_t length_table2[kHuffmanCodes2] = {0};
-            uint16_t decode_table1_1[256];
+            uint16_t decode_table1_1[1 << kHuffmanMaxLen1Fast];
             uint16_t decode_table1_2[1 << kHuffmanMaxLen1];
             uint16_t decode_table2[1 << kHuffmanMaxLen2];
 
@@ -314,8 +315,11 @@ static int main_decode() {
             if (opos % 4 != 0) opos++;  // keep aligned
             if (opos % 4 != 0) opos++;  // keep aligned
 
-            ZlingMakeDecodeTable(length_table1, decode_table1_1, kHuffmanCodes1, 8);
+            // decode_table1: 2-level decode table
+            ZlingMakeDecodeTable(length_table1, decode_table1_1, kHuffmanCodes1, kHuffmanMaxLen1Fast);
             ZlingMakeDecodeTable(length_table1, decode_table1_2, kHuffmanCodes1, kHuffmanMaxLen1);
+
+            // decode_table2: 1-level decode table
             ZlingMakeDecodeTable(length_table2, decode_table2, kHuffmanCodes2, kHuffmanMaxLen2);
 
             // decode
@@ -331,7 +335,7 @@ static int main_decode() {
                     codebuf.Input(obuf[opos++], 8);
 #endif
                 }
-                if ((tbuf[i] = decode_table1_1[codebuf.Peek(8)]) == uint16_t(-1)) {
+                if ((tbuf[i] = decode_table1_1[codebuf.Peek(kHuffmanMaxLen1Fast)]) == uint16_t(-1)) {
                     tbuf[i] = decode_table1_2[codebuf.Peek(kHuffmanMaxLen1)];
                 }
                 codebuf.Output(length_table1[tbuf[i]]);
