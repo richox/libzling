@@ -68,7 +68,7 @@ void ZlingMakeEncodeTable(const uint32_t* length_table,
                           int max_codes,
                           int max_codelen);
 
-// ZlingMakeDecodeTable: build encode table from canonical length table.
+// ZlingMakeDecodeTable: build decode table from canonical length table.
 void ZlingMakeDecodeTable(const uint32_t* length_table,
                           uint16_t* decode_table,
                           int max_codes,
