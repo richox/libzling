@@ -31,9 +31,9 @@ TEST(ZlingHuffman, MakeEncodeTable) {
 
     baidu::zling::huffman::ZlingMakeEncodeTable(length_table, encode_table, 4, 8);
     EXPECT_EQ(encode_table[0], 0);
-    EXPECT_EQ(encode_table[1], 0); // rev(0)
-    EXPECT_EQ(encode_table[2], 1); // rev(10)
-    EXPECT_EQ(encode_table[3], 3); // rev(11)
+    EXPECT_EQ(encode_table[1], 0);  // rev(0)
+    EXPECT_EQ(encode_table[2], 1);  // rev(10)
+    EXPECT_EQ(encode_table[3], 3);  // rev(11)
 }
 
 TEST(ZlingHuffman, MakeDecodeTable) {
@@ -43,11 +43,13 @@ TEST(ZlingHuffman, MakeDecodeTable) {
         2,
         2,
     };
+    uint16_t encode_table[4];
     uint16_t decode_table[1 << 8];
 
-    baidu::zling::huffman::ZlingMakeDecodeTable(length_table, decode_table, 4, 8);
-    EXPECT_EQ(decode_table[0], 1); // 0 ->1
-    EXPECT_EQ(decode_table[1], 2); // 10->2
-    EXPECT_EQ(decode_table[2], 1); // 01->1
-    EXPECT_EQ(decode_table[3], 3); // 11->3
+    baidu::zling::huffman::ZlingMakeEncodeTable(length_table, encode_table, 4, 8);
+    baidu::zling::huffman::ZlingMakeDecodeTable(length_table, encode_table, decode_table, 4, 8);
+    EXPECT_EQ(decode_table[0], 1);  // 0 ->1
+    EXPECT_EQ(decode_table[1], 2);  // 10->2
+    EXPECT_EQ(decode_table[2], 1);  // 01->1
+    EXPECT_EQ(decode_table[3], 3);  // 11->3
 }

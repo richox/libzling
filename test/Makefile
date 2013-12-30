@@ -1,5 +1,5 @@
-CPPFLAGS= -I/home/users/zhangli10/third-64/gtest/include -I.. -Wall -g3
-LDFLAGS=  -L/home/users/zhangli10/third-64/gtest/lib -lgtest -lgtest_main -lpthread
+CPPFLAGS= -I/home/users/zhangli10/svn_trunk/third-64/gtest/include -I.. -Wall -g3
+LDFLAGS=  -L/home/users/zhangli10/svn_trunk/third-64/gtest/lib -lgtest -lgtest_main -lpthread
 
 build: zling_test
 
