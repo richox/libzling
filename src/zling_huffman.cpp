@@ -164,12 +164,10 @@ void ZlingMakeEncodeTable(
 
 void ZlingMakeDecodeTable(
     const uint32_t* length_table,
+    uint16_t* encode_table,
     uint16_t* decode_table,
     int max_codes,
     int max_codelen) {
-
-    uint16_t encode_table[max_codes];
-    ZlingMakeEncodeTable(length_table, encode_table, max_codes, max_codelen);
 
     memset(decode_table, -1, sizeof(decode_table[0]) * (1 << max_codelen));
 
