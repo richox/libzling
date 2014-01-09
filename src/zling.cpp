@@ -63,6 +63,10 @@ using baidu::zling::lz::kMatchMaxLen;
 using baidu::zling::lz::kMatchMinLen;
 using baidu::zling::lz::kBucketItemSize;
 
+static inline double GetTimeCost(clock_t clock_start) {
+    return 1.0 * (clock() - clock_start) / CLOCKS_PER_SEC;
+}
+
 static const unsigned char matchidx_bitlen[] = {
     /* 0 */ 0, 0, 0, 0,
     /* 4 */ 1, 1,
@@ -233,10 +237,11 @@ static int main_encode() {
             size_dst += 8;
             size_dst += olen;
         }
-        fprintf(stderr, "%6.2f MB => %6.2f MB %.2f%%, %.3f sec\n",
+        fprintf(stderr, "%6.2f MB => %6.2f MB %.2f%%, %.3f sec, speed=%.3f MB/sec\n",
                 size_src / 1e6,
                 size_dst / 1e6,
-                1e2 * size_dst / size_src, (clock() - clock_start) * 1.0 / CLOCKS_PER_SEC);
+                1e2 * size_dst / size_src, GetTimeCost(clock_start),
+                size_src / GetTimeCost(clock_start) / 1e6);
         fflush(stderr);
     }
     delete lzencoder;
@@ -246,10 +251,11 @@ static int main_encode() {
         return -1;
     }
     fprintf(stderr,
-            "\nencode: %llu => %llu, time=%.3f sec\n",
+            "\nencode: %llu => %llu, time=%.3f sec, speed=%.3f MB/sec\n",
             size_src,
             size_dst,
-            (clock() - clock_start) * 1.0 / CLOCKS_PER_SEC);
+            GetTimeCost(clock_start),
+            size_src / GetTimeCost(clock_start) / 1e6);
     return 0;
 }
 
@@ -375,10 +381,11 @@ static int main_decode() {
         // output
         fwrite(ibuf, 1, decpos, stdout);
         size_src += decpos;
-        fprintf(stderr, "%6.2f MB <= %6.2f MB %.2f%%, %.3f sec\n",
+        fprintf(stderr, "%6.2f MB <= %6.2f MB %.2f%%, %.3f sec, speed=%.3f MB/sec\n",
                 size_src / 1e6,
                 size_dst / 1e6,
-                1e2 * size_dst / size_src, (clock() - clock_start) * 1.0 / CLOCKS_PER_SEC);
+                1e2 * size_dst / size_src, GetTimeCost(clock_start),
+                size_src / GetTimeCost(clock_start) / 1e6);
         fflush(stderr);
     }
     delete lzdecoder;
@@ -389,10 +396,11 @@ static int main_decode() {
     }
 
     fprintf(stderr,
-            "\ndecode: %llu <= %llu, time=%.3f sec\n",
+            "\ndecode: %llu <= %llu, time=%.3f sec, speed=%.3f MB/sec\n",
             size_src,
             size_dst,
-            (clock() - clock_start) * 1.0 / CLOCKS_PER_SEC);
+            GetTimeCost(clock_start),
+            size_src / GetTimeCost(clock_start) / 1e6);
     return 0;
 }
 
