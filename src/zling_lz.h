@@ -40,7 +40,8 @@
 #if HAS_CXX11_SUPPORT
 #include <cstdint>
 #else
-#include <boost/cstdint.hpp>
+#include <stdint.h>
+#include <inttypes.h>
 #endif
 
 namespace baidu {

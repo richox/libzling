@@ -1,5 +1,3 @@
-#include <stdio.h>
-
 /**
  * zling:
  *  light-weight lossless data compression utility.
