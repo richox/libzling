@@ -50,7 +50,7 @@ namespace lz {
 
 static const int kBucketItemSize = 4096;
 static const int kBucketItemHash = 8192;
-static const int kMatchDiscardMinLen = 3000;
+static const int kMatchDiscardMinLen = 3072;
 static const int kMatchDepth = 8;
 static const int kMatchMinLen = 4;
 static const int kMatchMaxLen = 259;
@@ -72,7 +72,7 @@ public:
     void Reset();
 
 private:
-    int  Match(unsigned char* buf, int pos, int* match_idx, int* match_len);
+    int  MatchAndUpdate(unsigned char* buf, int pos, int* match_idx, int* match_len);
     void Update(unsigned char* buf, int pos);
 
     struct ZlingEncodeBucket {
