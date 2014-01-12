@@ -153,10 +153,12 @@ int inline ZlingRolzEncoder::MatchAndUpdate(unsigned char* buf, int pos, int* ma
                 }
             }
         }
-        if (offset <= int(bucket->offset[bucket->suffix[node]] & 0xffffff)) {
+        node = bucket->suffix[node];
+
+        // end chaining?
+        if (!node || offset <= int(bucket->offset[node] & 0xffffff)) {
             break;
         }
-        node = bucket->suffix[node];
     }
 
     if (maxlen >= kMatchMinLen + (maxidx >= kMatchDiscardMinLen)) {
