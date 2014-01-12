@@ -88,7 +88,7 @@ int ZlingRolzEncoder::Encode(unsigned char* ibuf, uint16_t* obuf, int ilen, int 
         int match_idx;
         int match_len;
 
-        if (MatchAndUpdate(ibuf, ipos, &match_idx, &match_len)) {
+        if (MatchAndUpdate(ibuf, ipos, &match_idx, &match_len, kMatchDepth)) {
             obuf[opos++] = 256 + match_len - kMatchMinLen;  // encode as match
             obuf[opos++] = match_idx;
             ipos += match_len;
@@ -102,7 +102,7 @@ int ZlingRolzEncoder::Encode(unsigned char* ibuf, uint16_t* obuf, int ilen, int 
     // rest byte
     while (opos < olen && ipos < ilen) {
         obuf[opos++] = ibuf[ipos];
-        Update(ibuf, ipos);
+        MatchAndUpdate(ibuf, ipos, NULL, NULL, 0);
         ipos += 1;
     }
     encpos[0] = ipos;
@@ -114,7 +114,7 @@ void ZlingRolzEncoder::Reset() {
     return;
 }
 
-int ZlingRolzEncoder::MatchAndUpdate(unsigned char* buf, int pos, int* match_idx, int* match_len) {
+int inline ZlingRolzEncoder::MatchAndUpdate(unsigned char* buf, int pos, int* match_idx, int* match_len, int match_depth) {
     int maxlen = kMatchMinLen - 1;
     int maxidx = 0;
     int hash = HashContext(buf + pos);
@@ -126,7 +126,19 @@ int ZlingRolzEncoder::MatchAndUpdate(unsigned char* buf, int pos, int* match_idx
 
     node = bucket->hash[hash_context];
 
-    for (i = 0; i < kMatchDepth; i++) {
+    // update befault matching (to make it faster)
+    bucket->head = RollingAdd(bucket->head, 1);
+    bucket->suffix[bucket->head] = bucket->hash[hash_context];
+    bucket->offset[bucket->head] = pos | hash_check << 24;
+    bucket->hash[hash_context] = bucket->head;
+
+    // entry already updated, cannot match
+    if (node == bucket->head) {
+        return 0;
+    }
+
+    // start matching
+    for (i = 0; i < match_depth; i++) {
         int offset = bucket->offset[node] & 0xffffff;
         int check = bucket->offset[node] >> 24;
 
@@ -134,8 +146,8 @@ int ZlingRolzEncoder::MatchAndUpdate(unsigned char* buf, int pos, int* match_idx
             int len = GetCommonLength(buf + pos, buf + offset, kMatchMaxLen);
 
             if (len > maxlen) {
+                maxidx = RollingSub(bucket->head - 1, node);
                 maxlen = len;
-                maxidx = RollingSub(bucket->head, node);
                 if (maxlen == kMatchMaxLen) {
                     break;
                 }
@@ -147,31 +159,12 @@ int ZlingRolzEncoder::MatchAndUpdate(unsigned char* buf, int pos, int* match_idx
         node = bucket->suffix[node];
     }
 
-    // update
-    bucket->head = RollingAdd(bucket->head, 1);
-    bucket->suffix[bucket->head] = bucket->hash[hash_context];
-    bucket->offset[bucket->head] = pos | hash_check << 24;
-    bucket->hash[hash_context] = bucket->head;
-
     if (maxlen >= kMatchMinLen + (maxidx >= kMatchDiscardMinLen)) {
         *match_len = maxlen;
         *match_idx = maxidx;
         return 1;
     }
     return 0;
-}
-
-void ZlingRolzEncoder::Update(unsigned char* buf, int pos) {
-    int hash = HashContext(buf + pos);
-    int hash_check   = hash / kBucketItemHash % 256;
-    int hash_context = hash % kBucketItemHash;
-    ZlingEncodeBucket* bucket = &m_buckets[buf[pos - 1]];
-
-    bucket->head = RollingAdd(bucket->head, 1);
-    bucket->suffix[bucket->head] = bucket->hash[hash_context];
-    bucket->offset[bucket->head] = pos | hash_check << 24;
-    bucket->hash[hash_context] = bucket->head;
-    return;
 }
 
 int ZlingRolzDecoder::Decode(uint16_t* ibuf, unsigned char* obuf, int ilen, int* decpos) {
@@ -190,14 +183,13 @@ int ZlingRolzDecoder::Decode(uint16_t* ibuf, unsigned char* obuf, int ilen, int*
     while (ipos < ilen) {
         if (ibuf[ipos] < 256) {  // process a literal byte
             obuf[opos] = ibuf[ipos++];
-            Update(obuf, opos);
+            GetMatchAndUpdate(obuf, opos, match_idx);
             opos++;
 
         } else {  // process a match
             match_len = ibuf[ipos++] - 256 + kMatchMinLen;
             match_idx = ibuf[ipos++];
-            match_offset = GetMatch(obuf, opos, match_idx);
-            Update(obuf, opos);
+            match_offset = GetMatchAndUpdate(obuf, opos, match_idx);
 
             IncrementalCopyFastPath(&obuf[match_offset], &obuf[opos], match_len);
             opos += match_len;
@@ -212,20 +204,18 @@ void ZlingRolzDecoder::Reset() {
     return;
 }
 
-int ZlingRolzDecoder::GetMatch(unsigned char* buf, int pos, int idx) {
+int ZlingRolzDecoder::GetMatchAndUpdate(unsigned char* buf, int pos, int idx) {
     ZlingDecodeBucket* bucket = &m_buckets[buf[pos - 1]];
     int head = bucket->head;
-    int node = RollingSub(head, idx);
+    int node;
 
-    return bucket->offset[node];
-}
-
-void ZlingRolzDecoder::Update(unsigned char* buf, int pos) {
-    ZlingDecodeBucket* bucket = &m_buckets[buf[pos - 1]];
-
+    // update
     bucket->head = RollingAdd(bucket->head, 1);
     bucket->offset[bucket->head] = pos;
-    return;
+
+    // get match
+    node = RollingSub(head, idx);
+    return bucket->offset[node];
 }
 
 }  // namespace lz

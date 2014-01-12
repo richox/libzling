@@ -72,8 +72,7 @@ public:
     void Reset();
 
 private:
-    int  MatchAndUpdate(unsigned char* buf, int pos, int* match_idx, int* match_len);
-    void Update(unsigned char* buf, int pos);
+    int MatchAndUpdate(unsigned char* buf, int pos, int* match_idx, int* match_len, int match_depth);
 
     struct ZlingEncodeBucket {
         uint16_t suffix[kBucketItemSize];
@@ -103,8 +102,7 @@ public:
     void Reset();
 
 private:
-    int  GetMatch(unsigned char* buf, int pos, int idx);
-    void Update(unsigned char* buf, int pos);
+    int GetMatchAndUpdate(unsigned char* buf, int pos, int idx);
 
     struct ZlingDecodeBucket {
         uint32_t offset[kBucketItemSize];
