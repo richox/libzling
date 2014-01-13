@@ -117,9 +117,10 @@ void ZlingRolzEncoder::Reset() {
 int inline ZlingRolzEncoder::MatchAndUpdate(unsigned char* buf, int pos, int* match_idx, int* match_len, int match_depth) {
     int maxlen = kMatchMinLen - 1;
     int maxidx = 0;
-    int hash = HashContext(buf + pos);
-    int hash_check   = hash / kBucketItemHash % 256;
-    int hash_context = hash % kBucketItemHash;
+    uint32_t hash = HashContext(buf + pos);
+    uint8_t  hash_check   = hash / kBucketItemHash % 256;
+    uint32_t hash_context = hash % kBucketItemHash;
+
     int node;
     int i;
     ZlingEncodeBucket* bucket = &m_buckets[buf[pos - 1]];
@@ -139,8 +140,8 @@ int inline ZlingRolzEncoder::MatchAndUpdate(unsigned char* buf, int pos, int* ma
 
     // start matching
     for (i = 0; i < match_depth; i++) {
-        int offset = bucket->offset[node] & 0xffffff;
-        int check = bucket->offset[node] >> 24;
+        uint32_t offset = bucket->offset[node] & 0xffffff;
+        uint8_t  check = bucket->offset[node] >> 24;
 
         if (check == hash_check && buf[pos + maxlen] == buf[offset + maxlen]) {
             int len = GetCommonLength(buf + pos, buf + offset, kMatchMaxLen);
@@ -156,7 +157,7 @@ int inline ZlingRolzEncoder::MatchAndUpdate(unsigned char* buf, int pos, int* ma
         node = bucket->suffix[node];
 
         // end chaining?
-        if (!node || offset <= int(bucket->offset[node] & 0xffffff)) {
+        if (!node || offset <= (bucket->offset[node] & 0xffffff)) {
             break;
         }
     }
