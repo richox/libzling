@@ -39,7 +39,7 @@ namespace zling {
 namespace lz {
 
 static inline uint32_t HashContext(unsigned char* ptr) {
-    return (ptr[0] * 33337 + ptr[1] * 3337 + ptr[2] * 337 + ptr[3]);
+    return (*reinterpret_cast<uint32_t*>(ptr) + ptr[2] * 137 + ptr[3] * 13337);
 }
 
 static inline uint32_t RollingAdd(uint32_t x, uint32_t y) {
