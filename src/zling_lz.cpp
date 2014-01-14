@@ -133,8 +133,13 @@ int inline ZlingRolzEncoder::MatchAndUpdate(unsigned char* buf, int pos, int* ma
     bucket->offset[bucket->head] = pos | hash_check << 24;
     bucket->hash[hash_context] = bucket->head;
 
+    // no match for first position (faster)
+    if (node == 0) {
+        return 0;
+    }
+
     // entry already updated, cannot match
-    if (node == 0 || node == bucket->head) {
+    if (node == bucket->head) {
         return 0;
     }
 
