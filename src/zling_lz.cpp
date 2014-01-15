@@ -152,7 +152,7 @@ int inline ZlingRolzEncoder::MatchAndUpdate(unsigned char* buf, int pos, int* ma
             int len = GetCommonLength(buf + pos, buf + offset, kMatchMaxLen);
 
             if (len > maxlen) {
-                maxidx = RollingSub(bucket->head - 1, node);
+                maxidx = RollingSub(bucket->head, node);
                 maxlen = len;
                 if (maxlen == kMatchMaxLen) {
                     break;
@@ -214,7 +214,6 @@ void ZlingRolzDecoder::Reset() {
 
 int ZlingRolzDecoder::GetMatchAndUpdate(unsigned char* buf, int pos, int idx) {
     ZlingDecodeBucket* bucket = &m_buckets[buf[pos - 1]];
-    int head = bucket->head;
     int node;
 
     // update
@@ -222,7 +221,7 @@ int ZlingRolzDecoder::GetMatchAndUpdate(unsigned char* buf, int pos, int idx) {
     bucket->offset[bucket->head] = pos;
 
     // get match
-    node = RollingSub(head, idx);
+    node = RollingSub(bucket->head, idx);
     return bucket->offset[node];
 }
 
