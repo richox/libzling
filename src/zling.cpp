@@ -37,8 +37,11 @@
 #include <cstring>
 #include <ctime>
 
+#define __STDC_FORMAT_MACROS
+
 #if HAS_CXX11_SUPPORT
 #include <cstdint>
+#include <cinttypes>
 #else
 #include <stdint.h>
 #include <inttypes.h>
@@ -252,7 +255,7 @@ static int main_encode() {
         return -1;
     }
     fprintf(stderr,
-            "\nencode: %llu => %llu, time=%.3f sec, speed=%.3f MB/sec\n",
+            "\nencode: %"PRIu64" => %"PRIu64", time=%.3f sec, speed=%.3f MB/sec\n",
             size_src,
             size_dst,
             GetTimeCost(clock_start),
@@ -397,7 +400,7 @@ static int main_decode() {
     }
 
     fprintf(stderr,
-            "\ndecode: %llu <= %llu, time=%.3f sec, speed=%.3f MB/sec\n",
+            "\ndecode: %"PRIu64" <= %"PRIu64", time=%.3f sec, speed=%.3f MB/sec\n",
             size_src,
             size_dst,
             GetTimeCost(clock_start),
