@@ -30,55 +30,34 @@
  * SUCH DAMAGE.
  *
  * @author zhangli10<zhangli10@baidu.com>
- * @brief  manipulate code buffer.
+ * @brief  libzling.
  */
-#ifndef SRC_ZLING_CODEBUF_H
-#define SRC_ZLING_CODEBUF_H
+#ifndef SRC_LIBZLING_H
+#define SRC_LIBZLING_H
 
 #include "inc.h"
 
 namespace baidu {
 namespace zling {
-namespace codebuf {
 
-class ZlingCodebuf {
-public:
-    ZlingCodebuf() {
-        m_buf = 0;
-        m_len = 0;
-    }
-
-    inline void Input(uint64_t code, int len) {
-        m_buf |= code << m_len;
-        m_len += len;
-        return;
-    }
-
-    inline uint64_t Output(int len) {
-        uint64_t out = Peek(len);
-        m_buf >>= len;
-        m_len  -= len;
-        return out;
-    }
-
-    inline uint64_t Peek(int len) const {
-        return m_buf & ~(-1ull << len);
-    }
-
-    inline int GetLength() const {
-        return m_len;
-    }
-
-private:
-    uint64_t m_buf;
-    int m_len;
-
-    // not copyable
-    ZlingCodebuf(const ZlingCodebuf&);
-    ZlingCodebuf& operator = (const ZlingCodebuf&);
+struct IInputer {
+    virtual size_t GetData(unsigned char* buf, size_t len) = 0;
+    virtual bool IsEnd() = 0;
+    virtual bool IsErr() = 0;
+};
+struct IOutputer {
+    virtual size_t PutData(unsigned char* buf, size_t len) = 0;
+    virtual bool IsErr() = 0;
+};
+struct IActionHandler {
+    virtual void OnInit(IInputer* inputer, IOutputer* outputer) {}
+    virtual void OnDone(IInputer* inputer, IOutputer* outputer) {}
+    virtual void OnProcess(IInputer* inputer, IOutputer* outputer) {}
 };
 
-}  // namespace codebuf
+int Encode(IInputer* inputer, IOutputer* outputer, IActionHandler* action_handler = NULL);
+int Decode(IInputer* inputer, IOutputer* outputer, IActionHandler* action_handler = NULL);
+
 }  // namespace zling
 }  // namespace baidu
-#endif  // SRC_ZLING_CODEBUF_H
+#endif  // SRC_LIBZLING_H

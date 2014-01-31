@@ -35,14 +35,7 @@
 #ifndef SRC_ZLING_LZ_H
 #define SRC_ZLING_LZ_H
 
-#include <cstring>
-
-#if HAS_CXX11_SUPPORT
-#include <cstdint>
-#else
-#include <stdint.h>
-#include <inttypes.h>
-#endif
+#include "inc.h"
 
 namespace baidu {
 namespace zling {

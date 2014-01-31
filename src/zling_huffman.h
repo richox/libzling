@@ -35,15 +35,7 @@
 #ifndef SRC_ZLING_HUFFMAN_H
 #define SRC_ZLING_HUFFMAN_H
 
-#include <algorithm>
-#include <cstring>
-
-#if HAS_CXX11_SUPPORT
-#include <cstdint>
-#else
-#include <stdint.h>
-#include <inttypes.h>
-#endif
+#include "inc.h"
 
 namespace baidu {
 namespace zling {

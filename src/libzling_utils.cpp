@@ -30,55 +30,39 @@
  * SUCH DAMAGE.
  *
  * @author zhangli10<zhangli10@baidu.com>
- * @brief  manipulate code buffer.
+ * @brief  libzling utils.
  */
-#ifndef SRC_ZLING_CODEBUF_H
-#define SRC_ZLING_CODEBUF_H
-
-#include "inc.h"
+#include "libzling_utils.h"
 
 namespace baidu {
 namespace zling {
-namespace codebuf {
 
-class ZlingCodebuf {
-public:
-    ZlingCodebuf() {
-        m_buf = 0;
-        m_len = 0;
-    }
+size_t FileInputer::GetData(unsigned char* buf, size_t len) {
+    size_t idatasize = fread(buf, 1, len, m_fp);
+    m_total_read += idatasize;
+    return idatasize;
+}
+bool FileInputer::IsEnd() {
+    return feof(m_fp);
+}
+bool FileInputer::IsErr() {
+    return ferror(m_fp);
+}
+size_t FileInputer::GetInputSize() {
+    return m_total_read;
+}
 
-    inline void Input(uint64_t code, int len) {
-        m_buf |= code << m_len;
-        m_len += len;
-        return;
-    }
+size_t FileOutputer::PutData(unsigned char* buf, size_t len) {
+    size_t odatasize = fwrite(buf, 1, len, m_fp);
+    m_total_write += odatasize;
+    return odatasize;
+}
+bool FileOutputer::IsErr() {
+    return ferror(m_fp);
+}
+size_t FileOutputer::GetOutputSize() {
+    return m_total_write;
+}
 
-    inline uint64_t Output(int len) {
-        uint64_t out = Peek(len);
-        m_buf >>= len;
-        m_len  -= len;
-        return out;
-    }
-
-    inline uint64_t Peek(int len) const {
-        return m_buf & ~(-1ull << len);
-    }
-
-    inline int GetLength() const {
-        return m_len;
-    }
-
-private:
-    uint64_t m_buf;
-    int m_len;
-
-    // not copyable
-    ZlingCodebuf(const ZlingCodebuf&);
-    ZlingCodebuf& operator = (const ZlingCodebuf&);
-};
-
-}  // namespace codebuf
 }  // namespace zling
 }  // namespace baidu
-#endif  // SRC_ZLING_CODEBUF_H

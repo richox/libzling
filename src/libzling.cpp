@@ -30,46 +30,27 @@
  * SUCH DAMAGE.
  *
  * @author zhangli10<zhangli10@baidu.com>
- * @brief  zling main.
+ * @brief  libzling.
  */
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <ctime>
+#include "stdio.h"
+#include "libzling.h"
+#include "zling_codebuf.h"
+#include "zling_huffman.h"
+#include "zling_lz.h"
 
-#define __STDC_FORMAT_MACROS
+namespace baidu {
+namespace zling {
 
-#if HAS_CXX11_SUPPORT
-#include <cstdint>
-#include <cinttypes>
-#else
-#include <stdint.h>
-#include <inttypes.h>
-#endif
+using codebuf::ZlingCodebuf;
+using huffman::ZlingMakeLengthTable;
+using huffman::ZlingMakeEncodeTable;
+using huffman::ZlingMakeDecodeTable;
+using lz::ZlingRolzEncoder;
+using lz::ZlingRolzDecoder;
 
-#if defined(__MINGW32__) || defined(__MINGW64__)
-#include <fcntl.h>  // setmode()
-#include <io.h>
-#endif
-
-#include "src/zling_codebuf.h"
-#include "src/zling_huffman.h"
-#include "src/zling_lz.h"
-
-using baidu::zling::codebuf::ZlingCodebuf;
-using baidu::zling::huffman::ZlingMakeLengthTable;
-using baidu::zling::huffman::ZlingMakeEncodeTable;
-using baidu::zling::huffman::ZlingMakeDecodeTable;
-using baidu::zling::lz::ZlingRolzEncoder;
-using baidu::zling::lz::ZlingRolzDecoder;
-
-using baidu::zling::lz::kMatchMaxLen;
-using baidu::zling::lz::kMatchMinLen;
-using baidu::zling::lz::kBucketItemSize;
-
-static inline double GetTimeCost(clock_t clock_start) {
-    return 1.0 * (clock() - clock_start) / CLOCKS_PER_SEC;
-}
+using lz::kMatchMaxLen;
+using lz::kMatchMinLen;
+using lz::kBucketItemSize;
 
 static const unsigned char matchidx_bitlen[] = {
     /* 0 */ 0, 0, 0, 0,
@@ -86,10 +67,17 @@ static const unsigned char matchidx_bitlen[] = {
 static const int kMatchidxCodeSymbols = sizeof(matchidx_bitlen) / sizeof(matchidx_bitlen[0]);
 static const int kMatchidxMaxBitlen = 8;
 
-static unsigned char matchidx_code[kBucketItemSize];
-static unsigned char matchidx_bits[kBucketItemSize];
-static uint16_t      matchidx_base[kMatchidxCodeSymbols];
+static unsigned char matchidx_code[kBucketItemSize] = {
+#include "ztable_matchidx_code.inc"  /* include auto-generated constant tables */
+};
+static unsigned char matchidx_bits[kBucketItemSize] = {
+#include "ztable_matchidx_bits.inc"  /* include auto-generated constant tables */
+};
+static uint16_t matchidx_base[kMatchidxCodeSymbols] = {
+#include "ztable_matchidx_base.inc"  /* include auto-generated constant tables */
+};
 
+#if 0  /* no longer needed -- use constant tables instead. */
 static inline void InitMatchidxCode() {
     int code = 0;
     int bits = 0;
@@ -103,8 +91,20 @@ static inline void InitMatchidxCode() {
             matchidx_base[++code] = i + 1;
         }
     }
+
+    /* print tables */
+    for (int i = 0; i < kBucketItemSize; i++) {
+        fprintf(stderr, "%2hhu,%s", matchidx_code[i], ((i % 16 == 15) ? "\n" : "\x20"));
+    }
+    for (int i = 0; i < kBucketItemSize; i++) {
+        fprintf(stderr, "%3hhu,%s", matchidx_bits[i], ((i % 16 == 15) ? "\n" : "\x20"));
+    }
+    for (int i = 0; i < kMatchidxCodeSymbols; i++) {
+        fprintf(stderr, "%4hu,%s", matchidx_base[i], ((i % 16 == 15) ? "\n" : "\x20"));
+    }
     return;
 }
+#endif
 
 static inline uint32_t IdxToCode(uint32_t idx) {
     return matchidx_code[idx];
@@ -133,32 +133,61 @@ static const int kBlockSizeIn      = 16777216;
 static const int kBlockSizeRolz    = 262144;
 static const int kBlockSizeHuffman = 393216;
 
-static unsigned char ibuf[kBlockSizeIn];
-static unsigned char obuf[kBlockSizeHuffman + 16];  // avoid overflow on decoding
-static uint16_t      tbuf[kBlockSizeRolz];
+static inline int GetChar(IInputer* inputer) {
+    unsigned char ch;
+    inputer->GetData(&ch, 1);
+    return ch;
+}
+static inline int PutChar(IOutputer* outputer, int c) {
+    unsigned char ch = c;
+    outputer->PutData(&ch, 1);
+    return ch;
+}
 
-static int main_encode() {
+#define CHECK_IO_ERROR(io) do { \
+    if ((io)->IsErr()) { \
+        goto EncodeOrDecodeFinished; \
+    } \
+} while(0)
+
+static const int kFlagRolzStart    = 1;
+static const int kFlagRolzContinue = 2;
+static const int kFlagRolzStop     = 0;
+
+int Encode(IInputer* inputer, IOutputer* outputer, IActionHandler* action_handler) {
     ZlingRolzEncoder* lzencoder = new ZlingRolzEncoder();
-    uint64_t size_src = 0;
-    uint64_t size_dst = 0;
-    int ilen = 0;
-    int rlen = 0;
-    int olen = 0;
-    clock_t clock_start = clock();
+    int ilen;
+    int olen;
+    int rlen;
+    int encpos;
 
-    InitMatchidxCode();
+    unsigned char* ibuf = new unsigned char[kBlockSizeIn];
+    unsigned char* obuf = new unsigned char[kBlockSizeHuffman + 16];  // avoid overflow on decoding
+    uint16_t*      tbuf = new unsigned uint16_t[kBlockSizeRolz];
 
-    while ((ilen = fread(ibuf, 1, kBlockSizeIn, stdin)) > 0) {
-        fputc(0, stdout);  // flag: start rolz round
-        size_dst += 1;
-        size_src += ilen;
+    if (action_handler) {
+        action_handler->OnInit(inputer, outputer);
+    }
 
-        int encpos = 0;
+    while (!inputer->IsEnd() && !inputer->IsErr()) {
+        ilen = 0;
+        olen = 0;
+        rlen = 0;
+        encpos = 0;
+
+        while(!inputer->IsEnd() && !inputer->IsErr() && ilen < kBlockSizeIn) {
+            ilen += inputer->GetData(ibuf + ilen, kBlockSizeIn - ilen);
+            CHECK_IO_ERROR(inputer);
+        }
+
+        PutChar(outputer, kFlagRolzStart);
+        CHECK_IO_ERROR(outputer);
+
         lzencoder->Reset();
 
         while (encpos < ilen) {
-            fputc(1, stdout);  // flag: continue rolz round
-            size_dst += 1;
+            PutChar(outputer, kFlagRolzContinue);
+            CHECK_IO_ERROR(outputer);
 
             // ROLZ encode
             // ============================================================
@@ -228,76 +257,74 @@ static int main_encode() {
             }
             olen = opos;
 
-            // output
-            fputc(rlen / 16777216 % 256, stdout);
-            fputc(olen / 16777216 % 256, stdout);
-            fputc(rlen / 65536 % 256, stdout);
-            fputc(olen / 65536 % 256, stdout);
-            fputc(rlen / 256 % 256, stdout);
-            fputc(olen / 256 % 256, stdout);
-            fputc(rlen % 256, stdout);
-            fputc(olen % 256, stdout);
-            fwrite(obuf, 1, olen, stdout);
-            size_dst += 8;
-            size_dst += olen;
+            // outputer
+            PutChar(outputer, rlen / 16777216 % 256); CHECK_IO_ERROR(outputer);
+            PutChar(outputer, olen / 16777216 % 256); CHECK_IO_ERROR(outputer);
+            PutChar(outputer, rlen / 65536 % 256);    CHECK_IO_ERROR(outputer);
+            PutChar(outputer, olen / 65536 % 256);    CHECK_IO_ERROR(outputer);
+            PutChar(outputer, rlen / 256 % 256);      CHECK_IO_ERROR(outputer);
+            PutChar(outputer, olen / 256 % 256);      CHECK_IO_ERROR(outputer);
+            PutChar(outputer, rlen % 256);            CHECK_IO_ERROR(outputer);
+            PutChar(outputer, olen % 256);            CHECK_IO_ERROR(outputer);
+
+            for (int ooff = 0; !outputer->IsErr() && ooff < olen; ) {
+                ooff += outputer->PutData(obuf + ooff, olen - ooff);
+                CHECK_IO_ERROR(outputer);
+            }
         }
-        fprintf(stderr, "%6.2f MB => %6.2f MB %.2f%%, %.3f sec, speed=%.3f MB/sec\n",
-                size_src / 1e6,
-                size_dst / 1e6,
-                1e2 * size_dst / size_src, GetTimeCost(clock_start),
-                size_src / GetTimeCost(clock_start) / 1e6);
-        fflush(stderr);
+        PutChar(outputer, kFlagRolzStop);
+        CHECK_IO_ERROR(outputer);
+
+        if (action_handler) {
+            action_handler->OnProcess(inputer, outputer);
+        }
+    }
+
+EncodeOrDecodeFinished:
+    if (action_handler) {
+        action_handler->OnDone(inputer, outputer);
     }
     delete lzencoder;
-
-    if (ferror(stdin) || ferror(stdout)) {
-        fprintf(stderr, "error: I/O error.\n");
-        return -1;
-    }
-    fprintf(stderr,
-            "\nencode: %"PRIu64" => %"PRIu64", time=%.3f sec, speed=%.3f MB/sec\n",
-            size_src,
-            size_dst,
-            GetTimeCost(clock_start),
-            size_src / GetTimeCost(clock_start) / 1e6);
-    return 0;
+    delete [] ibuf;
+    delete [] obuf;
+    delete [] tbuf;
+    return (inputer->IsErr() || outputer->IsErr()) ? -1 : 0;
 }
 
-static int main_decode() {
+int Decode(IInputer* inputer, IOutputer* outputer, IActionHandler* action_handler) {
     ZlingRolzDecoder* lzdecoder = new ZlingRolzDecoder();
-    uint64_t size_src = 0;
-    uint64_t size_dst = 0;
-    int rlen = 0;
-    int olen = 0;
-    clock_t clock_start = clock();
+    int rlen;
+    int olen;
+    int decpos;
 
-    InitMatchidxCode();
+    unsigned char* ibuf = new unsigned char[kBlockSizeIn];
+    unsigned char* obuf = new unsigned char[kBlockSizeHuffman + 16];  // avoid overflow on decoding
+    uint16_t*      tbuf = new unsigned uint16_t[kBlockSizeRolz];
 
-    while (ungetc(fgetc(stdin), stdin) == 0) {  // flag: start rolz round
-        fgetc(stdin);
-        size_dst += 1;
+    if (action_handler) {
+        action_handler->OnInit(inputer, outputer);
+    }
 
-        int decpos = 0;
+    while (!inputer->IsEnd() && GetChar(inputer) == kFlagRolzStart) {
+        olen = 0;
+        rlen = 0;
+        decpos = 0;
         lzdecoder->Reset();
 
-        while (ungetc(fgetc(stdin), stdin) == 1) {  // flag: continue rolz round
-            fgetc(stdin);
-            size_dst += 1;
+        while (GetChar(inputer) == kFlagRolzContinue) {
+            rlen  = GetChar(inputer) * 16777216; CHECK_IO_ERROR(inputer);
+            olen  = GetChar(inputer) * 16777216; CHECK_IO_ERROR(inputer);
+            rlen += GetChar(inputer) * 65536;    CHECK_IO_ERROR(inputer);
+            olen += GetChar(inputer) * 65536;    CHECK_IO_ERROR(inputer);
+            rlen += GetChar(inputer) * 256;      CHECK_IO_ERROR(inputer);
+            olen += GetChar(inputer) * 256;      CHECK_IO_ERROR(inputer);
+            rlen += GetChar(inputer);            CHECK_IO_ERROR(inputer);
+            olen += GetChar(inputer);            CHECK_IO_ERROR(inputer);
 
-            rlen  = fgetc(stdin) * 16777216;
-            olen  = fgetc(stdin) * 16777216;
-            rlen += fgetc(stdin) * 65536;
-            olen += fgetc(stdin) * 65536;
-            rlen += fgetc(stdin) * 256;
-            olen += fgetc(stdin) * 256;
-            rlen += fgetc(stdin);
-            olen += fgetc(stdin);
-            if (fread(obuf, 1, olen, stdin) != size_t(olen)) {
-                fprintf(stderr, "error: reading block with size '%d' error.", olen);
-                return -1;
+            for (int ooff = 0; !outputer->IsErr() && ooff < olen; ) {
+                ooff += inputer->GetData(obuf + ooff, olen - ooff);
+                CHECK_IO_ERROR(inputer);
             }
-            size_dst += 8;
-            size_dst += olen;
 
             // HUFFMAN DECODE
             // ============================================================
@@ -383,72 +410,27 @@ static int main_decode() {
         }
 
         // output
-        fwrite(ibuf, 1, decpos, stdout);
-        size_src += decpos;
-        fprintf(stderr, "%6.2f MB <= %6.2f MB %.2f%%, %.3f sec, speed=%.3f MB/sec\n",
-                size_src / 1e6,
-                size_dst / 1e6,
-                1e2 * size_dst / size_src, GetTimeCost(clock_start),
-                size_src / GetTimeCost(clock_start) / 1e6);
-        fflush(stderr);
+        for (int ioff = 0; !outputer->IsErr() && ioff < decpos; ) {
+            ioff += outputer->PutData(ibuf + ioff, decpos - ioff);
+            CHECK_IO_ERROR(outputer);
+        }
+
+        if (action_handler) {
+            action_handler->OnProcess(inputer, outputer);
+        }
+    }
+
+EncodeOrDecodeFinished:
+    if (action_handler) {
+        action_handler->OnDone(inputer, outputer);
     }
     delete lzdecoder;
-
-    if (ferror(stdin) || ferror(stdout)) {
-        fprintf(stderr, "error: I/O error.\n");
-        return -1;
-    }
-
-    fprintf(stderr,
-            "\ndecode: %"PRIu64" <= %"PRIu64", time=%.3f sec, speed=%.3f MB/sec\n",
-            size_src,
-            size_dst,
-            GetTimeCost(clock_start),
-            size_src / GetTimeCost(clock_start) / 1e6);
+    delete [] ibuf;
+    delete [] obuf;
+    delete [] tbuf;
+    return (inputer->IsErr() || outputer->IsErr()) ? -1 : 0;
     return 0;
 }
 
-int main(int argc, char** argv) {
-
-    // set stdio to binary mode for windows
-#if defined(__MINGW32__) || defined(__MINGW64__)
-    setmode(fileno(stdin),  O_BINARY);
-    setmode(fileno(stdout), O_BINARY);
-#endif
-
-    // welcome message
-    fprintf(stderr, "zling:\n");
-    fprintf(stderr, "   light-weight lossless data compression utility\n");
-    fprintf(stderr, "   by Zhang Li <zhangli10 at baidu.com>\n");
-    fprintf(stderr, "\n");
-
-    // zling <e/d> __argv2__ __argv3__
-    if (argc == 4) {
-        if (freopen(argv[3], "wb", stdout) == NULL) {
-            fprintf(stderr, "error: cannot open file '%s' for write.\n", argv[3]);
-            return -1;
-        }
-        argc = 3;
-    }
-
-    // zling <e/d> __argv2__ (stdout)
-    if (argc == 3) {
-        if (freopen(argv[2], "rb", stdin) == NULL) {
-            fprintf(stderr, "error: cannot open file '%s' for read.\n", argv[2]);
-            return -1;
-        }
-        argc = 2;
-    }
-
-    // zling <e/d> (stdin) (stdout)
-    if (argc == 2 && strcmp(argv[1], "e") == 0) return main_encode();
-    if (argc == 2 && strcmp(argv[1], "d") == 0) return main_decode();
-
-    // help message
-    fprintf(stderr, "usage:\n");
-    fprintf(stderr, "   zling e source target\n");
-    fprintf(stderr, "   zling d source target\n");
-    fprintf(stderr, "    * source: default to stdin\n");
-    fprintf(stderr, "    * target: default to stdout\n");
-    return -1;
-}
+}  // namespace zling
+}  // namespace baidu

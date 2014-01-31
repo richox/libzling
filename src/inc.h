@@ -30,55 +30,22 @@
  * SUCH DAMAGE.
  *
  * @author zhangli10<zhangli10@baidu.com>
- * @brief  manipulate code buffer.
+ * @brief  include headers.
  */
-#ifndef SRC_ZLING_CODEBUF_H
-#define SRC_ZLING_CODEBUF_H
+#ifndef SRC_INC_H
+#define SRC_INC_H
 
-#include "inc.h"
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <algorithm>
 
-namespace baidu {
-namespace zling {
-namespace codebuf {
+#if HAS_CXX11_SUPPORT
+#include <cstdint>
+#include <cinttypes>
+#else
+#include <stdint.h>
+#include <inttypes.h>
+#endif
 
-class ZlingCodebuf {
-public:
-    ZlingCodebuf() {
-        m_buf = 0;
-        m_len = 0;
-    }
-
-    inline void Input(uint64_t code, int len) {
-        m_buf |= code << m_len;
-        m_len += len;
-        return;
-    }
-
-    inline uint64_t Output(int len) {
-        uint64_t out = Peek(len);
-        m_buf >>= len;
-        m_len  -= len;
-        return out;
-    }
-
-    inline uint64_t Peek(int len) const {
-        return m_buf & ~(-1ull << len);
-    }
-
-    inline int GetLength() const {
-        return m_len;
-    }
-
-private:
-    uint64_t m_buf;
-    int m_len;
-
-    // not copyable
-    ZlingCodebuf(const ZlingCodebuf&);
-    ZlingCodebuf& operator = (const ZlingCodebuf&);
-};
-
-}  // namespace codebuf
-}  // namespace zling
-}  // namespace baidu
-#endif  // SRC_ZLING_CODEBUF_H
+#endif  // SRC_INC_H
