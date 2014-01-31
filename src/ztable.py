@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 
+# table auto-generator for zling.
+# author: Zhang Li <zhangli10@baidu.com>
+
 matchidx_bitlen = [
     0, 0, 0, 0,
     1, 1,
