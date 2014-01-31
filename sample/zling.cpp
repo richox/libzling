@@ -48,9 +48,24 @@
 #include "libzling.h"
 #include "libzling_utils.h"
 
+struct EncodeDemoHandler: baidu::zling::IActionHandler {
+    EncodeDemoHandler() {
+    }
+    void OnProcess(baidu::zling::IInputer* inputer_, baidu::zling::IOutputer* outputer_) {
+        baidu::zling::FileInputer* inputer   = dynamic_cast<baidu::zling::FileInputer*>(inputer_);
+        baidu::zling::FileOutputer* outputer = dynamic_cast<baidu::zling::FileOutputer*>(outputer_);
+
+        fprintf(
+            stderr,
+            "%8.2f MB => %8.2f MB\n",
+            inputer->GetInputSize()   / 1e6,
+            outputer->GetOutputSize() / 1e6);
+    }
+};
 int main(int argc, char** argv) {
     baidu::zling::FileInputer inputer(stdin);
     baidu::zling::FileOutputer outputer(stdout);
+    EncodeDemoHandler encode_handler;
 
 #if defined(__MINGW32__) || defined(__MINGW64__)
     setmode(fileno(stdin),  O_BINARY);  // set stdio to binary mode for windows
@@ -83,7 +98,7 @@ int main(int argc, char** argv) {
 
     // zling <e/d> (stdin) (stdout)
     if (argc == 2 && strcmp(argv[1], "e") == 0) {
-        return baidu::zling::Encode(&inputer, &outputer);
+        return baidu::zling::Encode(&inputer, &outputer, &encode_handler);
     }
     if (argc == 2 && strcmp(argv[1], "d") == 0) {
         return baidu::zling::Decode(&inputer, &outputer);
