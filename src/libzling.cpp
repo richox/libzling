@@ -33,8 +33,8 @@
  * @brief  libzling.
  */
 #include "libzling.h"
-#include "zling_huffman.h"
-#include "zling_lz.h"
+#include "libzling_huffman.h"
+#include "libzling_lz.h"
 
 namespace baidu {
 namespace zling {
@@ -50,58 +50,21 @@ using lz::kMatchMinLen;
 using lz::kBucketItemSize;
 
 static const unsigned char matchidx_bitlen[] = {
-    /* 0 */ 0, 0, 0, 0,
-    /* 4 */ 1, 1,
-    /* 6 */ 2, 2,
-    /* 8 */ 3, 3,
-    /* 10*/ 4, 4,
-    /* 12*/ 5, 5,
-    /* 14*/ 6, 6,
-    /* 16*/ 7, 7,
-    /* 18*/ 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
-    /* 32*/
+#include "ztable_matchidx_blen.inc"  /* include auto-generated constant tables */
 };
-static const int kMatchidxCodeSymbols = sizeof(matchidx_bitlen) / sizeof(matchidx_bitlen[0]);
-static const int kMatchidxMaxBitlen = 8;
 
-static unsigned char matchidx_code[kBucketItemSize] = {
+static const unsigned char matchidx_code[] = {
 #include "ztable_matchidx_code.inc"  /* include auto-generated constant tables */
 };
-static unsigned char matchidx_bits[kBucketItemSize] = {
+static const unsigned char matchidx_bits[] = {
 #include "ztable_matchidx_bits.inc"  /* include auto-generated constant tables */
 };
-static uint16_t matchidx_base[kMatchidxCodeSymbols] = {
+static const uint16_t matchidx_base[] = {
 #include "ztable_matchidx_base.inc"  /* include auto-generated constant tables */
 };
 
-#if 0  /* no longer needed -- use constant tables instead. */
-static inline void InitMatchidxCode() {
-    int code = 0;
-    int bits = 0;
-
-    for (int i = 0; i < kBucketItemSize; i++) {
-        matchidx_code[i] = code;
-        matchidx_bits[i] = bits;
-
-        if (i + 1 < kBucketItemSize && (++bits) >> matchidx_bitlen[code] != 0) {
-            bits = 0;
-            matchidx_base[++code] = i + 1;
-        }
-    }
-
-    /* print tables */
-    for (int i = 0; i < kBucketItemSize; i++) {
-        fprintf(stderr, "%2hhu,%s", matchidx_code[i], ((i % 16 == 15) ? "\n" : "\x20"));
-    }
-    for (int i = 0; i < kBucketItemSize; i++) {
-        fprintf(stderr, "%3hhu,%s", matchidx_bits[i], ((i % 16 == 15) ? "\n" : "\x20"));
-    }
-    for (int i = 0; i < kMatchidxCodeSymbols; i++) {
-        fprintf(stderr, "%4hu,%s", matchidx_base[i], ((i % 16 == 15) ? "\n" : "\x20"));
-    }
-    return;
-}
-#endif
+static const int kMatchidxCodeSymbols = sizeof(matchidx_bitlen) / sizeof(matchidx_bitlen[0]);
+static const int kMatchidxMaxBitlen = 8;
 
 static inline uint32_t IdxToCode(uint32_t idx) {
     return matchidx_code[idx];

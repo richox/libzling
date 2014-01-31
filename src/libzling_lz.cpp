@@ -32,7 +32,7 @@
  * @author zhangli10<zhangli10@baidu.com>
  * @brief  manipulate ROLZ (reduced offset Lempel-Ziv) compression.
  */
-#include "src/zling_lz.h"
+#include "src/libzling_lz.h"
 
 namespace baidu {
 namespace zling {

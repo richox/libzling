@@ -32,8 +32,8 @@
  * @author zhangli10<zhangli10@baidu.com>
  * @brief  manipulate ROLZ (reduced offset Lempel-Ziv) compression.
  */
-#ifndef SRC_ZLING_LZ_H
-#define SRC_ZLING_LZ_H
+#ifndef SRC_LIBZLING_LZ_H
+#define SRC_LIBZLING_LZ_H
 
 #include "inc.h"
 
@@ -110,4 +110,4 @@ private:
 }  // namespace lz
 }  // namespace zling
 }  // namespace baidu
-#endif  // SRC_ZLING_LZ_H
+#endif  // SRC_LIBZLING_LZ_H

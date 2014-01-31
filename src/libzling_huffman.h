@@ -32,8 +32,8 @@
  * @author zhangli10<zhangli10@baidu.com>
  * @brief  manipulate huffman encoding.
  */
-#ifndef SRC_ZLING_HUFFMAN_H
-#define SRC_ZLING_HUFFMAN_H
+#ifndef SRC_LIBZLING_HUFFMAN_H
+#define SRC_LIBZLING_HUFFMAN_H
 
 #include "inc.h"
 
@@ -71,4 +71,4 @@ void ZlingMakeDecodeTable(const uint32_t* length_table,
 }  // namespace huffman
 }  // namespace zling
 }  // namespace baidu
-#endif  // SRC_ZLING_HUFFMAN_H
+#endif  // SRC_LIBZLING_HUFFMAN_H
