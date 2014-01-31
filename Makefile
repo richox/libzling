@@ -1,4 +1,4 @@
-CXXFLAGS = -Wall -g3 -O3 -static -I.
+CXXFLAGS = -Wall -g3 -O3 -static -I. -I./src
 LDFLAGS =  -Wall -g3 -O3
 
 SRCDIR:= src
@@ -8,18 +8,30 @@ DIR:= $(shell mkdir -p $(OBJDIR) $(BINDIR))
 SRC:= $(shell echo src/*.cpp)
 OBJ:= $(addprefix $(OBJDIR)/, $(addsuffix .o, $(basename $(notdir $(SRC)))))
 DEP:= $(addprefix $(OBJDIR)/, $(addsuffix .d, $(basename $(notdir $(SRC)))))
-BIN:= zling
+LIB:= libzling.a
 
-$(BIN): $(OBJ)
-	@ echo -e " linking..."
-	@ $(CXX) -o $@ $^ $(CXXFLAGS) $(LDFLAGS)
+SAMPLE_SRC:= ./sample/zling.cpp
+SAMPLE:= zling
+
+target: $(LIB) $(SAMPLE)
+clean:
+	@ echo -n -e " cleaning..."
+	@ rm -rf $(DEP) $(OBJ) $(LIB) $(SAMPLE)
+	@ rmdir -p --ignore-fail-on-non-empty $(OBJDIR)
 	@ echo -e " done."
-	@
-	@ ### run test ### \
-		cat /usr/bin/gcc | \
-		./zling e | \
-		./zling d | \
-		cmp /usr/bin/gcc
+
+.PHONY:  target
+.PHONY:  clean
+
+$(SAMPLE): $(SAMPLE_SRC)
+	@ echo -e " making sample..."
+	@ $(CXX) -o $@ $^ $(CXXFLAGS) -L. -lzling
+	@ echo -e " done."
+
+$(LIB): $(OBJ)
+	@ echo -e " making static library..."
+	@ $(AR) -r $@ $^
+	@ echo -e " done."
 
 -include $(DEP)
 
@@ -33,11 +45,3 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.cpp
 	@ $(CXX) $(CXXFLAGS) -c -o $@ $<
 	@ echo -e " done."
 
-clean:
-	@ echo -n -e " cleaning..."
-	@ rm -rf $(DEP) $(OBJ) $(BIN)
-	@ rmdir -p --ignore-fail-on-non-empty $(OBJDIR)
-	@ echo -e " done."
-
-.IGNORE: clean
-.PHONY:  clean
