@@ -30,7 +30,7 @@
  * SUCH DAMAGE.
  *
  * @author zhangli10<zhangli10@baidu.com>
- * @brief  zling main.
+ * @brief  zling demo.
  */
 #include <cstdio>
 #include <cstdlib>
@@ -53,7 +53,6 @@
 #endif
 
 #include "libzling.h"
-#include "libzling_utils.h"
 
 struct DemoActionHandler: baidu::zling::IActionHandler {
     DemoActionHandler() {
@@ -69,6 +68,12 @@ struct DemoActionHandler: baidu::zling::IActionHandler {
         uint64_t osize = m_outputer->GetOutputSize();
         double cost_seconds = double(clock() - m_clockstart) / CLOCKS_PER_SEC;
 
+        if (m_inputer->IsErr() || m_outputer->IsErr()) {
+            fprintf(stderr, "I/O error during encode/decode.\n");
+            fflush(stderr);
+            return;
+        }
+
         if (IsEncode()) {
             fprintf(stderr, "encode: %"PRIu64" => %"PRIu64", time=%.3f sec, speed=%.3f MB/sec\n",
                     isize,
@@ -80,7 +85,7 @@ struct DemoActionHandler: baidu::zling::IActionHandler {
                     osize,
                     isize,
                     cost_seconds,
-                    isize / cost_seconds / 1e6);
+                    osize / cost_seconds / 1e6);
         }
         fflush(stderr);
     }

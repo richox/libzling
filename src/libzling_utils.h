@@ -36,11 +36,52 @@
 #define SRC_LIBZLING_UTILS_H
 
 #include "inc.h"
-#include "libzling.h"
 
 namespace baidu {
 namespace zling {
 
+/* Interfaces:
+ *  IInputer:       interface for an abstract inputer.
+ *  IOutputer:      interface for an abstract outputer.
+ *  IActionHandler: interface for an abstract action handler (normally used for printing process.)
+ */
+struct IInputer {
+    virtual size_t GetData(unsigned char* buf, size_t len) = 0;
+    virtual bool IsEnd() = 0;
+    virtual bool IsErr() = 0;
+};
+struct IOutputer {
+    virtual size_t PutData(unsigned char* buf, size_t len) = 0;
+    virtual bool IsErr() = 0;
+};
+struct IActionHandler {
+    virtual void OnInit() {}
+    virtual void OnDone() {}
+    virtual void OnProcess() {}
+
+    inline void SetInputerOutputer(IInputer* inputer, IOutputer* outputer, bool is_encode) {
+        m_is_encode = is_encode;
+        m_inputer = inputer;
+        m_outputer = outputer;
+    }
+    inline bool IsEncode() {
+        return m_is_encode;
+    }
+    inline IInputer* GetInputer() {
+        return m_inputer;
+    }
+    inline IOutputer* GetOutputer() {
+        return m_outputer;
+    }
+private:
+    bool       m_is_encode;
+    IInputer*  m_inputer;
+    IOutputer* m_outputer;
+};
+
+/* FileInputer/FileOutputer:
+ *  FILE I/O implementation of IInputer/IOutputer.
+ */
 struct FileInputer: public baidu::zling::IInputer {
     FileInputer(FILE* fp):
         m_fp(fp),

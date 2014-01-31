@@ -23,9 +23,9 @@ clean:
 .PHONY:  target
 .PHONY:  clean
 
-$(SAMPLE): $(SAMPLE_SRC)
+$(SAMPLE): $(SAMPLE_SRC) $(LIB)
 	@ echo -e " making sample..."
-	@ $(CXX) -o $@ $^ $(CXXFLAGS) -L. -lzling
+	@ $(CXX) -o $@ $(SAMPLE_SRC) $(CXXFLAGS) -L. -lzling
 	@ echo -e " done."
 
 $(LIB): $(OBJ)

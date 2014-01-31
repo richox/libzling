@@ -32,7 +32,6 @@
  * @author zhangli10<zhangli10@baidu.com>
  * @brief  libzling.
  */
-#include "stdio.h"
 #include "libzling.h"
 #include "zling_codebuf.h"
 #include "zling_huffman.h"

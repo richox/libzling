@@ -36,44 +36,10 @@
 #define SRC_LIBZLING_H
 
 #include "inc.h"
+#include "libzling_utils.h"
 
 namespace baidu {
 namespace zling {
-
-struct IInputer {
-    virtual size_t GetData(unsigned char* buf, size_t len) = 0;
-    virtual bool IsEnd() = 0;
-    virtual bool IsErr() = 0;
-};
-struct IOutputer {
-    virtual size_t PutData(unsigned char* buf, size_t len) = 0;
-    virtual bool IsErr() = 0;
-};
-struct IActionHandler {
-    virtual void OnInit() {}
-    virtual void OnDone() {}
-    virtual void OnProcess() {}
-
-    inline void SetInputerOutputer(IInputer* inputer, IOutputer* outputer, bool is_encode) {
-        m_is_encode = is_encode;
-        m_inputer = inputer;
-        m_outputer = outputer;
-    }
-    inline bool IsEncode() {
-        return m_is_encode;
-    }
-    inline IInputer* GetInputer() {
-        return m_inputer;
-    }
-    inline IOutputer* GetOutputer() {
-        return m_outputer;
-    }
-
-private:
-    bool       m_is_encode;
-    IInputer*  m_inputer;
-    IOutputer* m_outputer;
-};
 
 int Encode(IInputer* inputer, IOutputer* outputer, IActionHandler* action_handler = NULL);
 int Decode(IInputer* inputer, IOutputer* outputer, IActionHandler* action_handler = NULL);
