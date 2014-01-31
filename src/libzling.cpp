@@ -33,14 +33,12 @@
  * @brief  libzling.
  */
 #include "libzling.h"
-#include "zling_codebuf.h"
 #include "zling_huffman.h"
 #include "zling_lz.h"
 
 namespace baidu {
 namespace zling {
 
-using codebuf::ZlingCodebuf;
 using huffman::ZlingMakeLengthTable;
 using huffman::ZlingMakeEncodeTable;
 using huffman::ZlingMakeDecodeTable;

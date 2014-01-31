@@ -79,6 +79,39 @@ private:
     IOutputer* m_outputer;
 };
 
+/* codebuf: manipulate code (u64) buffer.
+ *  Input();
+ *  Output();
+ *  Peek();
+ *  GetLength();
+ */
+struct ZlingCodebuf {
+    ZlingCodebuf():
+        m_buf(0),
+        m_len(0) {}
+
+    inline void Input(uint64_t code, int len) {
+        m_buf |= code << m_len;
+        m_len += len;
+        return;
+    }
+    inline uint64_t Output(int len) {
+        uint64_t out = Peek(len);
+        m_buf >>= len;
+        m_len  -= len;
+        return out;
+    }
+    inline uint64_t Peek(int len) const {
+        return m_buf & ~(-1ull << len);
+    }
+    inline int GetLength() const {
+        return m_len;
+    }
+private:
+    uint64_t m_buf;
+    int m_len;
+};
+
 /* FileInputer/FileOutputer:
  *  FILE I/O implementation of IInputer/IOutputer.
  */
