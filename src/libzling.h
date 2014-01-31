@@ -50,9 +50,29 @@ struct IOutputer {
     virtual bool IsErr() = 0;
 };
 struct IActionHandler {
-    virtual void OnInit(IInputer* inputer, IOutputer* outputer) {}
-    virtual void OnDone(IInputer* inputer, IOutputer* outputer) {}
-    virtual void OnProcess(IInputer* inputer, IOutputer* outputer) {}
+    virtual void OnInit() {}
+    virtual void OnDone() {}
+    virtual void OnProcess() {}
+
+    inline void SetInputerOutputer(IInputer* inputer, IOutputer* outputer, bool is_encode) {
+        m_is_encode = is_encode;
+        m_inputer = inputer;
+        m_outputer = outputer;
+    }
+    inline bool IsEncode() {
+        return m_is_encode;
+    }
+    inline IInputer* GetInputer() {
+        return m_inputer;
+    }
+    inline IOutputer* GetOutputer() {
+        return m_outputer;
+    }
+
+private:
+    bool       m_is_encode;
+    IInputer*  m_inputer;
+    IOutputer* m_outputer;
 };
 
 int Encode(IInputer* inputer, IOutputer* outputer, IActionHandler* action_handler = NULL);

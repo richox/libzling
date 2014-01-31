@@ -38,7 +38,14 @@
 #include <ctime>
 
 #define __STDC_FORMAT_MACROS
+
+#if HAS_CXX11_SUPPORT
+#include <cstdint>
+#include <cinttypes>
+#else
+#include <stdint.h>
 #include <inttypes.h>
+#endif
 
 #if defined(__MINGW32__) || defined(__MINGW64__)
 #include <fcntl.h>  // setmode()
@@ -48,24 +55,69 @@
 #include "libzling.h"
 #include "libzling_utils.h"
 
-struct EncodeDemoHandler: baidu::zling::IActionHandler {
-    EncodeDemoHandler() {
+struct DemoActionHandler: baidu::zling::IActionHandler {
+    DemoActionHandler() {
+        m_clockstart = clock();
     }
-    void OnProcess(baidu::zling::IInputer* inputer_, baidu::zling::IOutputer* outputer_) {
-        baidu::zling::FileInputer* inputer   = dynamic_cast<baidu::zling::FileInputer*>(inputer_);
-        baidu::zling::FileOutputer* outputer = dynamic_cast<baidu::zling::FileOutputer*>(outputer_);
+    void OnInit() {
+        m_inputer  = dynamic_cast<baidu::zling::FileInputer*>(GetInputer());
+        m_outputer = dynamic_cast<baidu::zling::FileOutputer*>(GetOutputer());
+    }
 
-        fprintf(
-            stderr,
-            "%8.2f MB => %8.2f MB\n",
-            inputer->GetInputSize()   / 1e6,
-            outputer->GetOutputSize() / 1e6);
+    void OnDone() {
+        uint64_t isize = m_inputer->GetInputSize();
+        uint64_t osize = m_outputer->GetOutputSize();
+        double cost_seconds = double(clock() - m_clockstart) / CLOCKS_PER_SEC;
+
+        if (IsEncode()) {
+            fprintf(stderr, "encode: %"PRIu64" => %"PRIu64", time=%.3f sec, speed=%.3f MB/sec\n",
+                    isize,
+                    osize,
+                    cost_seconds,
+                    isize / cost_seconds / 1e6);
+        } else {
+            fprintf(stderr, "encode: %"PRIu64" <= %"PRIu64", time=%.3f sec, speed=%.3f MB/sec\n",
+                    osize,
+                    isize,
+                    cost_seconds,
+                    isize / cost_seconds / 1e6);
+        }
+        fflush(stderr);
     }
+
+    void OnProcess() {
+        uint64_t isize = m_inputer->GetInputSize();
+        uint64_t osize = m_outputer->GetOutputSize();
+        double cost_seconds = double(clock() - m_clockstart) / CLOCKS_PER_SEC;
+
+        if (IsEncode()) {
+            fprintf(stderr, "%6.2f MB => %6.2f MB %.2f%%, %.3f sec, speed=%.3f MB/sec\n",
+                    isize / 1e6,
+                    osize / 1e6,
+                    osize * 1e2 / isize,
+                    cost_seconds,
+                    isize / cost_seconds / 1e6);
+        } else {
+            fprintf(stderr, "%6.2f MB <= %6.2f MB %.2f%%, %.3f sec, speed=%.3f MB/sec\n",
+                    osize / 1e6,
+                    isize / 1e6,
+                    isize * 1e2 / osize,
+                    cost_seconds,
+                    osize / cost_seconds / 1e6);
+        }
+        fflush(stderr);
+    }
+
+private:
+    baidu::zling::FileInputer*  m_inputer;
+    baidu::zling::FileOutputer* m_outputer;
+    clock_t m_clockstart;
 };
+
 int main(int argc, char** argv) {
-    baidu::zling::FileInputer inputer(stdin);
+    baidu::zling::FileInputer  inputer(stdin);
     baidu::zling::FileOutputer outputer(stdout);
-    EncodeDemoHandler encode_handler;
+    DemoActionHandler demo_handler;
 
 #if defined(__MINGW32__) || defined(__MINGW64__)
     setmode(fileno(stdin),  O_BINARY);  // set stdio to binary mode for windows
@@ -98,10 +150,10 @@ int main(int argc, char** argv) {
 
     // zling <e/d> (stdin) (stdout)
     if (argc == 2 && strcmp(argv[1], "e") == 0) {
-        return baidu::zling::Encode(&inputer, &outputer, &encode_handler);
+        return baidu::zling::Encode(&inputer, &outputer, &demo_handler);
     }
     if (argc == 2 && strcmp(argv[1], "d") == 0) {
-        return baidu::zling::Decode(&inputer, &outputer);
+        return baidu::zling::Decode(&inputer, &outputer, &demo_handler);
     }
 
     // help message

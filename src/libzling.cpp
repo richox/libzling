@@ -155,6 +155,11 @@ static const int kFlagRolzContinue = 2;
 static const int kFlagRolzStop     = 0;
 
 int Encode(IInputer* inputer, IOutputer* outputer, IActionHandler* action_handler) {
+    if (action_handler) {
+        action_handler->SetInputerOutputer(inputer, outputer, true);
+        action_handler->OnInit();
+    }
+
     ZlingRolzEncoder* lzencoder = new ZlingRolzEncoder();
     int ilen;
     int olen;
@@ -164,10 +169,6 @@ int Encode(IInputer* inputer, IOutputer* outputer, IActionHandler* action_handle
     unsigned char* ibuf = new unsigned char[kBlockSizeIn];
     unsigned char* obuf = new unsigned char[kBlockSizeHuffman + 16];  // avoid overflow on decoding
     uint16_t*      tbuf = new unsigned uint16_t[kBlockSizeRolz];
-
-    if (action_handler) {
-        action_handler->OnInit(inputer, outputer);
-    }
 
     while (!inputer->IsEnd() && !inputer->IsErr()) {
         ilen = 0;
@@ -276,13 +277,13 @@ int Encode(IInputer* inputer, IOutputer* outputer, IActionHandler* action_handle
         CHECK_IO_ERROR(outputer);
 
         if (action_handler) {
-            action_handler->OnProcess(inputer, outputer);
+            action_handler->OnProcess();
         }
     }
 
 EncodeOrDecodeFinished:
     if (action_handler) {
-        action_handler->OnDone(inputer, outputer);
+        action_handler->OnDone();
     }
     delete lzencoder;
     delete [] ibuf;
@@ -292,6 +293,11 @@ EncodeOrDecodeFinished:
 }
 
 int Decode(IInputer* inputer, IOutputer* outputer, IActionHandler* action_handler) {
+    if (action_handler) {
+        action_handler->SetInputerOutputer(inputer, outputer, false);
+        action_handler->OnInit();
+    }
+
     ZlingRolzDecoder* lzdecoder = new ZlingRolzDecoder();
     int rlen;
     int olen;
@@ -300,10 +306,6 @@ int Decode(IInputer* inputer, IOutputer* outputer, IActionHandler* action_handle
     unsigned char* ibuf = new unsigned char[kBlockSizeIn];
     unsigned char* obuf = new unsigned char[kBlockSizeHuffman + 16];  // avoid overflow on decoding
     uint16_t*      tbuf = new unsigned uint16_t[kBlockSizeRolz];
-
-    if (action_handler) {
-        action_handler->OnInit(inputer, outputer);
-    }
 
     while (!inputer->IsEnd() && GetChar(inputer) == kFlagRolzStart) {
         olen = 0;
@@ -416,13 +418,13 @@ int Decode(IInputer* inputer, IOutputer* outputer, IActionHandler* action_handle
         }
 
         if (action_handler) {
-            action_handler->OnProcess(inputer, outputer);
+            action_handler->OnProcess();
         }
     }
 
 EncodeOrDecodeFinished:
     if (action_handler) {
-        action_handler->OnDone(inputer, outputer);
+        action_handler->OnDone();
     }
     delete lzdecoder;
     delete [] ibuf;
