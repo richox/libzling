@@ -175,7 +175,7 @@ int inline ZlingRolzEncoder::MatchAndUpdate(unsigned char* buf, int pos, int* ma
     return 0;
 }
 
-int ZlingRolzDecoder::Decode(uint16_t* ibuf, unsigned char* obuf, int ilen, int* decpos) {
+int ZlingRolzDecoder::Decode(uint16_t* ibuf, unsigned char* obuf, int ilen, int encpos, int* decpos) {
     int opos = decpos[0];
     int ipos = 0;
     int match_idx;
@@ -202,9 +202,17 @@ int ZlingRolzDecoder::Decode(uint16_t* ibuf, unsigned char* obuf, int ilen, int*
             IncrementalCopyFastPath(&obuf[match_offset], &obuf[opos], match_len);
             opos += match_len;
         }
+
+        if (opos > encpos) {
+            return -1;
+        }
+    }
+
+    if (opos != encpos) {
+        return -1;
     }
     decpos[0] = opos;
-    return ipos;
+    return 0;
 }
 
 void ZlingRolzDecoder::Reset() {

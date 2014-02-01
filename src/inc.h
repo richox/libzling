@@ -35,10 +35,11 @@
 #ifndef SRC_INC_H
 #define SRC_INC_H
 
+#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <algorithm>
+#include <stdexcept>
 
 #if HAS_CXX11_SUPPORT
 #include <cstdint>

@@ -49,11 +49,39 @@ struct IInputer {
     virtual size_t GetData(unsigned char* buf, size_t len) = 0;
     virtual bool IsEnd() = 0;
     virtual bool IsErr() = 0;
+
+    inline int GetChar() {
+        unsigned char ch;
+        GetData(&ch, 1);
+        return ch;
+    }
+    inline uint32_t GetUInt32() {
+        uint32_t v = 0;
+        v += GetChar() * 16777216;
+        v += GetChar() * 65536;
+        v += GetChar() * 256;
+        v += GetChar() * 1;
+        return v;
+    }
 };
 struct IOutputer {
     virtual size_t PutData(unsigned char* buf, size_t len) = 0;
     virtual bool IsErr() = 0;
+
+    inline int PutChar(int v) {
+        unsigned char ch = v;
+        PutData(&ch, 1);
+        return ch;
+    }
+    inline uint32_t PutUInt32(uint32_t v) {
+        PutChar(v / 16777216 % 256);
+        PutChar(v / 65536 % 256);
+        PutChar(v / 256 % 256);
+        PutChar(v / 1 % 256);
+        return v;
+    }
 };
+
 struct IActionHandler {
     virtual void OnInit() {}
     virtual void OnDone() {}

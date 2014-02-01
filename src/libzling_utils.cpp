@@ -43,7 +43,7 @@ size_t FileInputer::GetData(unsigned char* buf, size_t len) {
     return idatasize;
 }
 bool FileInputer::IsEnd() {
-    return feof(m_fp);
+    return ungetc(fgetc(m_fp), m_fp) == EOF;
 }
 bool FileInputer::IsErr() {
     return ferror(m_fp);

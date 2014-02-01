@@ -64,52 +64,57 @@ struct DemoActionHandler: baidu::zling::IActionHandler {
     }
 
     void OnDone() {
-        uint64_t isize = m_inputer->GetInputSize();
-        uint64_t osize = m_outputer->GetOutputSize();
-        double cost_seconds = double(clock() - m_clockstart) / CLOCKS_PER_SEC;
-
         if (m_inputer->IsErr() || m_outputer->IsErr()) {
             fprintf(stderr, "I/O error during encode/decode.\n");
             fflush(stderr);
             return;
         }
 
+        const char* encode_direction;
+        uint64_t isize;
+        uint64_t osize;
+        double cost_seconds = double(clock() - m_clockstart) / CLOCKS_PER_SEC;
+
         if (IsEncode()) {
-            fprintf(stderr, "encode: %"PRIu64" => %"PRIu64", time=%.3f sec, speed=%.3f MB/sec\n",
-                    isize,
-                    osize,
-                    cost_seconds,
-                    isize / cost_seconds / 1e6);
+            encode_direction = "=>";
+            isize = m_inputer->GetInputSize();
+            osize = m_outputer->GetOutputSize();
         } else {
-            fprintf(stderr, "encode: %"PRIu64" <= %"PRIu64", time=%.3f sec, speed=%.3f MB/sec\n",
-                    osize,
-                    isize,
-                    cost_seconds,
-                    osize / cost_seconds / 1e6);
+            encode_direction = "<=";
+            isize = m_outputer->GetOutputSize();
+            osize = m_inputer->GetInputSize();
         }
+        fprintf(stderr, "encode: %"PRIu64" %s %"PRIu64", time=%.3f sec, speed=%.3f MB/sec\n",
+                isize,
+                encode_direction,
+                osize,
+                cost_seconds,
+                isize / cost_seconds / 1e6);
         fflush(stderr);
     }
 
     void OnProcess() {
-        uint64_t isize = m_inputer->GetInputSize();
-        uint64_t osize = m_outputer->GetOutputSize();
+        const char* encode_direction;
+        uint64_t isize;
+        uint64_t osize;
         double cost_seconds = double(clock() - m_clockstart) / CLOCKS_PER_SEC;
 
         if (IsEncode()) {
-            fprintf(stderr, "%6.2f MB => %6.2f MB %.2f%%, %.3f sec, speed=%.3f MB/sec\n",
-                    isize / 1e6,
-                    osize / 1e6,
-                    osize * 1e2 / isize,
-                    cost_seconds,
-                    isize / cost_seconds / 1e6);
+            encode_direction = "=>";
+            isize = m_inputer->GetInputSize();
+            osize = m_outputer->GetOutputSize();
         } else {
-            fprintf(stderr, "%6.2f MB <= %6.2f MB %.2f%%, %.3f sec, speed=%.3f MB/sec\n",
-                    osize / 1e6,
-                    isize / 1e6,
-                    isize * 1e2 / osize,
-                    cost_seconds,
-                    osize / cost_seconds / 1e6);
+            encode_direction = "<=";
+            isize = m_outputer->GetOutputSize();
+            osize = m_inputer->GetInputSize();
         }
+        fprintf(stderr, "%6.2f MB %s %6.2f MB %.2f%%, %.3f sec, speed=%.3f MB/sec\n",
+                isize / 1e6,
+                encode_direction,
+                osize / 1e6,
+                osize * 1e2 / isize,
+                cost_seconds,
+                isize / cost_seconds / 1e6);
         fflush(stderr);
     }
 
@@ -154,11 +159,21 @@ int main(int argc, char** argv) {
     }
 
     // zling <e/d> (stdin) (stdout)
-    if (argc == 2 && strcmp(argv[1], "e") == 0) {
-        return baidu::zling::Encode(&inputer, &outputer, &demo_handler);
-    }
-    if (argc == 2 && strcmp(argv[1], "d") == 0) {
-        return baidu::zling::Decode(&inputer, &outputer, &demo_handler);
+    try {
+        if (argc == 2 && strcmp(argv[1], "e") == 0) {
+            return baidu::zling::Encode(&inputer, &outputer, &demo_handler);
+        }
+        if (argc == 2 && strcmp(argv[1], "d") == 0) {
+            return baidu::zling::Decode(&inputer, &outputer, &demo_handler);
+        }
+
+    } catch (const std::runtime_error& e) {
+        fprintf(stderr, "zling: runtime error: %s\n", e.what());
+        return -1;
+
+    } catch (const std::bad_alloc& e) {
+        fprintf(stderr, "zling: allocation failed.");
+        return -1;
     }
 
     // help message
