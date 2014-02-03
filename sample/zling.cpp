@@ -65,6 +65,8 @@ static inline uint32_t ComputeAdler32(unsigned char* data, size_t size) {
     return (b << 16) | a;
 }
 
+#define ENABLE_ADLER32_CHECKSUM 0
+
 struct DemoActionHandler: baidu::zling::IActionHandler {
     DemoActionHandler() {
         m_clockstart = clock();
@@ -111,7 +113,7 @@ struct DemoActionHandler: baidu::zling::IActionHandler {
         double cost_seconds = double(clock() - m_clockstart) / CLOCKS_PER_SEC;
 
         // adler32 checksum
-        /*
+#if ENABLE_ADLER32_CHECKSUM
         if (IsEncode()) {
             m_outputer->PutUInt32(ComputeAdler32(orig_data, orig_size));
         } else {
@@ -119,7 +121,7 @@ struct DemoActionHandler: baidu::zling::IActionHandler {
                 throw std::runtime_error("baidu::zling::Decode(): adler32 checksum not match.");
             }
         }
-        */
+#endif
 
         if (IsEncode()) {
             encode_direction = "=>";

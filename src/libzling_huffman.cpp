@@ -32,7 +32,7 @@
  * @author zhangli10<zhangli10@baidu.com>
  * @brief  manipulate huffman encoding.
  */
-#include "src/libzling_huffman.h"
+#include "libzling_huffman.h"
 
 namespace baidu {
 namespace zling {
