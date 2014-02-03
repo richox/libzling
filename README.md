@@ -36,4 +36,34 @@ You can build zling automatically by cmake with the following command:
 Usage
 =====
 
-Zling provides simple and lightweight interface, see <b>./sample/zling.cpp</b> for details.
+Zling provides simple and lightweight interface. here is a simple program showing how to work with libzling.
+
+    #include "libzling.h"
+
+    int main() {
+        // compress
+        {
+            FILE* fin = fopen("./1.txt", "rb");
+            FILE* fout = fopen("./1.txt.zlng", "wb");
+
+            baidu::zling::FileInputer  inputer(fin);
+            baidu::zling::FileOutputer outputer(fout);
+
+            baidu::zling::Encode(&inputer, &outputer);
+            fclose(fin);
+            fclose(fout);
+        }
+
+        // decompress
+        {
+            FILE* fin = fopen("./1.txt.zlng", "rb");
+            FILE* fout = fopen("./2.txt", "wb");
+
+            baidu::zling::FileInputer  inputer(fin);
+            baidu::zling::FileOutputer outputer(fout);
+            baidu::zling::Decode(&inputer, &outputer);
+        }
+        return 0;
+    }
+
+However zling supports more complicated interface, see <b>./sample/zling.cpp</b> for details.
