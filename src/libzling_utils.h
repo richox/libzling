@@ -41,11 +41,11 @@ namespace baidu {
 namespace zling {
 
 /* Interfaces:
- *  IInputer:       interface for an abstract inputer.
- *  IOutputer:      interface for an abstract outputer.
+ *  Inputer:       interface for an abstract inputer.
+ *  Outputer:      interface for an abstract outputer.
  *  IActionHandler: interface for an abstract action handler (normally used for printing process.)
  */
-struct IInputer {
+struct Inputer {
     virtual size_t GetData(unsigned char* buf, size_t len) = 0;
     virtual bool IsEnd() = 0;
     virtual bool IsErr() = 0;
@@ -53,7 +53,7 @@ struct IInputer {
     int GetChar();
     uint32_t GetUInt32();
 };
-struct IOutputer {
+struct Outputer {
     virtual size_t PutData(unsigned char* buf, size_t len) = 0;
     virtual bool IsErr() = 0;
 
@@ -64,9 +64,9 @@ struct IOutputer {
 struct IActionHandler {
     virtual void OnInit() {}
     virtual void OnDone() {}
-    virtual void OnProcess() {}
+    virtual void OnProcess(unsigned char* orig_data, size_t orig_size) {}
 
-    inline void SetInputerOutputer(IInputer* inputer, IOutputer* outputer, bool is_encode) {
+    inline void SetInputerOutputer(Inputer* inputer, Outputer* outputer, bool is_encode) {
         m_is_encode = is_encode;
         m_inputer = inputer;
         m_outputer = outputer;
@@ -74,16 +74,16 @@ struct IActionHandler {
     inline bool IsEncode() {
         return m_is_encode;
     }
-    inline IInputer* GetInputer() {
+    inline Inputer* GetInputer() {
         return m_inputer;
     }
-    inline IOutputer* GetOutputer() {
+    inline Outputer* GetOutputer() {
         return m_outputer;
     }
 private:
     bool       m_is_encode;
-    IInputer*  m_inputer;
-    IOutputer* m_outputer;
+    Inputer*  m_inputer;
+    Outputer* m_outputer;
 };
 
 /* codebuf: manipulate code (u64) buffer.
@@ -120,9 +120,9 @@ private:
 };
 
 /* FileInputer/FileOutputer:
- *  FILE I/O implementation of IInputer/IOutputer.
+ *  FILE I/O implementation of Inputer/Outputer.
  */
-struct FileInputer: public baidu::zling::IInputer {
+struct FileInputer: public baidu::zling::Inputer {
     FileInputer(FILE* fp):
         m_fp(fp),
         m_total_read(0) {}
@@ -137,7 +137,7 @@ private:
     size_t m_total_read;
 };
 
-struct FileOutputer: public baidu::zling::IOutputer {
+struct FileOutputer: public baidu::zling::Outputer {
     FileOutputer(FILE* fp):
         m_fp(fp),
         m_total_write(0) {}

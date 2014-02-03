@@ -54,6 +54,17 @@
 
 #include "libzling.h"
 
+static inline uint32_t ComputeAdler32(unsigned char* data, size_t size) {
+    uint32_t a = 1;
+    uint32_t b = 0;
+
+    for (size_t i = 0; i < size; i++) {
+        a = (a + data[i]) % 65521;
+        b = (b + a) % 65521;
+    }
+    return (b << 16) | a;
+}
+
 struct DemoActionHandler: baidu::zling::IActionHandler {
     DemoActionHandler() {
         m_clockstart = clock();
@@ -93,11 +104,22 @@ struct DemoActionHandler: baidu::zling::IActionHandler {
         fflush(stderr);
     }
 
-    void OnProcess() {
+    void OnProcess(unsigned char* orig_data, size_t orig_size) {
         const char* encode_direction;
         uint64_t isize;
         uint64_t osize;
         double cost_seconds = double(clock() - m_clockstart) / CLOCKS_PER_SEC;
+
+        // adler32 checksum
+        /*
+        if (IsEncode()) {
+            m_outputer->PutUInt32(ComputeAdler32(orig_data, orig_size));
+        } else {
+            if (m_inputer->GetUInt32() != ComputeAdler32(orig_data, orig_size)) {
+                throw std::runtime_error("baidu::zling::Decode(): adler32 checksum not match.");
+            }
+        }
+        */
 
         if (IsEncode()) {
             encode_direction = "=>";

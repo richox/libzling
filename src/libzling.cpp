@@ -93,6 +93,54 @@ static const int kBlockSizeIn      = 16777216;
 static const int kBlockSizeRolz    = 262144;
 static const int kBlockSizeHuffman = 393216;
 
+/* encode/decode allocation resource: auto free */
+struct EncodeResource {
+    ZlingRolzEncoder* lzencoder;
+    unsigned char* ibuf;
+    unsigned char* obuf;
+    uint16_t* tbuf;
+
+    EncodeResource(): lzencoder(NULL), ibuf(NULL), obuf(NULL), tbuf(NULL) {
+        ibuf = new(std::nothrow) unsigned char[kBlockSizeIn];
+        obuf = new(std::nothrow) unsigned char[kBlockSizeHuffman + 16];  // avoid overflow on decoding
+        tbuf = new(std::nothrow) unsigned uint16_t[kBlockSizeRolz];
+        lzencoder = new(std::nothrow) ZlingRolzEncoder();
+
+        if (!ibuf || !obuf || !tbuf || !lzencoder) {
+            throw std::bad_alloc();
+        }
+    }
+    ~EncodeResource() {
+        delete ibuf;
+        delete obuf;
+        delete tbuf;
+        delete lzencoder;
+    }
+};
+struct DecodeResource {
+    ZlingRolzDecoder* lzdecoder;
+    unsigned char* ibuf;
+    unsigned char* obuf;
+    uint16_t* tbuf;
+
+    DecodeResource(): lzdecoder(NULL), ibuf(NULL), obuf(NULL), tbuf(NULL) {
+        ibuf = new(std::nothrow) unsigned char[kBlockSizeIn];
+        obuf = new(std::nothrow) unsigned char[kBlockSizeHuffman + 16];  // avoid overflow on decoding
+        tbuf = new(std::nothrow) unsigned uint16_t[kBlockSizeRolz];
+        lzdecoder = new(std::nothrow) ZlingRolzDecoder();
+
+        if (!ibuf || !obuf || !tbuf || !lzdecoder) {
+            throw std::bad_alloc();
+        }
+    }
+    ~DecodeResource() {
+        delete ibuf;
+        delete obuf;
+        delete tbuf;
+        delete lzdecoder;
+    }
+};
+
 #define CHECK_IO_ERROR(io) do { \
     if ((io)->IsErr()) { \
         goto EncodeOrDecodeFinished; \
@@ -102,33 +150,18 @@ static const int kBlockSizeHuffman = 393216;
 static const int kFlagRolzContinue = 1;
 static const int kFlagRolzStop     = 0;
 
-int Encode(IInputer* inputer, IOutputer* outputer, IActionHandler* action_handler) {
+int Encode(Inputer* inputer, Outputer* outputer, IActionHandler* action_handler) {
     if (action_handler) {
         action_handler->SetInputerOutputer(inputer, outputer, true);
         action_handler->OnInit();
     }
 
-    ZlingRolzEncoder* lzencoder = NULL;
+    EncodeResource res;
     int rlen;
     int ilen;
     int olen;
     int encpos;
-    unsigned char* ibuf = NULL;
-    unsigned char* obuf = NULL;
-    uint16_t* tbuf = NULL;
 
-    lzencoder = new ZlingRolzEncoder();
-    tbuf = new unsigned uint16_t[kBlockSizeRolz];
-    ibuf = new unsigned char[kBlockSizeIn];
-    obuf = new unsigned char[kBlockSizeHuffman + 16];  // avoid overflow on decoding
-
-    if (!lzencoder || !tbuf || !ibuf || !obuf) {
-        delete lzencoder;
-        delete [] ibuf;
-        delete [] obuf;
-        delete [] tbuf;
-        throw std::bad_alloc();
-    }
     while (!inputer->IsEnd() && !inputer->IsErr()) {
         rlen = 0;
         ilen = 0;
@@ -136,10 +169,10 @@ int Encode(IInputer* inputer, IOutputer* outputer, IActionHandler* action_handle
         encpos = 0;
 
         while(!inputer->IsEnd() && !inputer->IsErr() && ilen < kBlockSizeIn) {
-            ilen += inputer->GetData(ibuf + ilen, kBlockSizeIn - ilen);
+            ilen += inputer->GetData(res.ibuf + ilen, kBlockSizeIn - ilen);
             CHECK_IO_ERROR(inputer);
         }
-        lzencoder->Reset();
+        res.lzencoder->Reset();
 
         while (encpos < ilen) {
              outputer->PutChar(kFlagRolzContinue);
@@ -147,7 +180,7 @@ int Encode(IInputer* inputer, IOutputer* outputer, IActionHandler* action_handle
 
             // ROLZ encode
             // ============================================================
-            rlen = lzencoder->Encode(ibuf, tbuf, ilen, kBlockSizeRolz, &encpos);
+            rlen = res.lzencoder->Encode(res.ibuf, res.tbuf, ilen, kBlockSizeRolz, &encpos);
 
             // HUFFMAN encode
             // ============================================================
@@ -161,9 +194,9 @@ int Encode(IInputer* inputer, IOutputer* outputer, IActionHandler* action_handle
             uint16_t encode_table2[kHuffmanCodes2];
 
             for (int i = 0; i < rlen; i++) {
-                freq_table1[tbuf[i]] += 1;
-                if (tbuf[i] >= 256) {
-                    freq_table2[IdxToCode(tbuf[++i])] += 1;
+                freq_table1[res.tbuf[i]] += 1;
+                if (res.tbuf[i] >= 256) {
+                    freq_table2[IdxToCode(res.tbuf[++i])] += 1;
                 }
             }
             ZlingMakeLengthTable(freq_table1, length_table1, 0, kHuffmanCodes1, kHuffmanMaxLen1);
@@ -174,38 +207,38 @@ int Encode(IInputer* inputer, IOutputer* outputer, IActionHandler* action_handle
 
             // write length table
             for (int i = 0; i < kHuffmanCodes1; i += 2) {
-                obuf[opos++] = length_table1[i] * 16 + length_table1[i + 1];
+                res.obuf[opos++] = length_table1[i] * 16 + length_table1[i + 1];
             }
             for (int i = 0; i < kHuffmanCodes2; i += 2) {
-                obuf[opos++] = length_table2[i] * 16 + length_table2[i + 1];
+                res.obuf[opos++] = length_table2[i] * 16 + length_table2[i + 1];
             }
 
             // encode
             for (int i = 0; i < rlen; i++) {
-                codebuf.Input(encode_table1[tbuf[i]], length_table1[tbuf[i]]);
-                if (tbuf[i] >= 256) {
+                codebuf.Input(encode_table1[res.tbuf[i]], length_table1[res.tbuf[i]]);
+                if (res.tbuf[i] >= 256) {
                     i++;
                     codebuf.Input(
-                        encode_table2[IdxToCode(tbuf[i])],
-                        length_table2[IdxToCode(tbuf[i])]);
+                        encode_table2[IdxToCode(res.tbuf[i])],
+                        length_table2[IdxToCode(res.tbuf[i])]);
                     codebuf.Input(
-                        IdxToBits(tbuf[i]),
-                        IdxToBitlen(tbuf[i]));
+                        IdxToBits(res.tbuf[i]),
+                        IdxToBitlen(res.tbuf[i]));
                 }
                 while (codebuf.GetLength() >= 32) {
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-                    *reinterpret_cast<uint32_t*>(obuf + opos) = codebuf.Output(32);
+                    *reinterpret_cast<uint32_t*>(res.obuf + opos) = codebuf.Output(32);
                     opos += 4;
 #else
-                    obuf[opos++] = codebuf.Output(8);
-                    obuf[opos++] = codebuf.Output(8);
-                    obuf[opos++] = codebuf.Output(8);
-                    obuf[opos++] = codebuf.Output(8);
+                    res.obuf[opos++] = codebuf.Output(8);
+                    res.obuf[opos++] = codebuf.Output(8);
+                    res.obuf[opos++] = codebuf.Output(8);
+                    res.obuf[opos++] = codebuf.Output(8);
 #endif
                 }
             }
             while (codebuf.GetLength() > 0) {
-                obuf[opos++] = codebuf.Output(8);
+                res.obuf[opos++] = codebuf.Output(8);
             }
             olen = opos;
 
@@ -215,7 +248,7 @@ int Encode(IInputer* inputer, IOutputer* outputer, IActionHandler* action_handle
             outputer->PutUInt32(olen);   CHECK_IO_ERROR(outputer);
 
             for (int ooff = 0; !outputer->IsErr() && ooff < olen; ) {
-                ooff += outputer->PutData(obuf + ooff, olen - ooff);
+                ooff += outputer->PutData(res.obuf + ooff, olen - ooff);
                 CHECK_IO_ERROR(outputer);
             }
         }
@@ -223,7 +256,7 @@ int Encode(IInputer* inputer, IOutputer* outputer, IActionHandler* action_handle
         CHECK_IO_ERROR(outputer);
 
         if (action_handler) {
-            action_handler->OnProcess();
+            action_handler->OnProcess(res.ibuf, ilen);
         }
     }
 
@@ -231,55 +264,32 @@ EncodeOrDecodeFinished:
     if (action_handler) {
         action_handler->OnDone();
     }
-    delete lzencoder;
-    delete [] ibuf;
-    delete [] obuf;
-    delete [] tbuf;
     return (inputer->IsErr() || outputer->IsErr()) ? -1 : 0;
 }
 
-int Decode(IInputer* inputer, IOutputer* outputer, IActionHandler* action_handler) {
+int Decode(Inputer* inputer, Outputer* outputer, IActionHandler* action_handler) {
     if (action_handler) {
         action_handler->SetInputerOutputer(inputer, outputer, false);
         action_handler->OnInit();
     }
 
-    ZlingRolzDecoder* lzdecoder = NULL;
+    DecodeResource res;
     int rlen;
     int olen;
     int encflag;
     int encpos;
     int decpos;
-    unsigned char* ibuf = NULL;
-    unsigned char* obuf = NULL;
-    uint16_t* tbuf = NULL;
 
-    lzdecoder = new ZlingRolzDecoder();
-    tbuf = new unsigned uint16_t[kBlockSizeRolz];
-    ibuf = new unsigned char[kBlockSizeIn];
-    obuf = new unsigned char[kBlockSizeHuffman + 16];  // avoid overflow on decoding
-
-    if (!lzdecoder || !tbuf || !ibuf || !obuf) {
-        delete lzdecoder;
-        delete [] ibuf;
-        delete [] obuf;
-        delete [] tbuf;
-        throw std::bad_alloc();
-    }
     while (!inputer->IsEnd()) {
         olen = 0;
         rlen = 0;
         decpos = 0;
-        lzdecoder->Reset();
+        res.lzdecoder->Reset();
 
         while (!inputer->IsEnd()) {
             encflag = inputer->GetChar();
 
-            if (encflag != kFlagRolzStop && encflag != kFlagRolzContinue) {
-                delete lzdecoder;  /* error: invalid encflag */
-                delete [] ibuf;
-                delete [] obuf;
-                delete [] tbuf;
+            if (encflag != kFlagRolzStop && encflag != kFlagRolzContinue) { /* error: invalid encflag */
                 throw std::runtime_error("baidu::zling::Decode(): invalid encflag.");
             }
             if (encflag == kFlagRolzStop) {
@@ -291,7 +301,7 @@ int Decode(IInputer* inputer, IOutputer* outputer, IActionHandler* action_handle
             olen   = inputer->GetUInt32(); CHECK_IO_ERROR(inputer);
 
             for (int ooff = 0; !inputer->IsEnd() && ooff < olen; ) {
-                ooff += inputer->GetData(obuf + ooff, olen - ooff);
+                ooff += inputer->GetData(res.obuf + ooff, olen - ooff);
                 CHECK_IO_ERROR(inputer);
             }
 
@@ -309,13 +319,13 @@ int Decode(IInputer* inputer, IOutputer* outputer, IActionHandler* action_handle
 
             // read length table
             for (int i = 0; i < kHuffmanCodes1; i += 2) {
-                length_table1[i] =     obuf[opos] / 16;
-                length_table1[i + 1] = obuf[opos] % 16;
+                length_table1[i] =     res.obuf[opos] / 16;
+                length_table1[i + 1] = res.obuf[opos] % 16;
                 opos++;
             }
             for (int i = 0; i < kHuffmanCodes2; i += 2) {
-                length_table2[i] =     obuf[opos] / 16;
-                length_table2[i + 1] = obuf[opos] % 16;
+                length_table2[i] =     res.obuf[opos] / 16;
+                length_table2[i + 1] = res.obuf[opos] % 16;
                 opos++;
             }
             if (opos % 4 != 0) opos++;  // keep aligned
@@ -349,40 +359,33 @@ int Decode(IInputer* inputer, IOutputer* outputer, IActionHandler* action_handle
             for (int i = 0; i < rlen; i++) {
                 while (codebuf.GetLength() < 32) {
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-                    codebuf.Input(*reinterpret_cast<uint32_t*>(obuf + opos), 32);
+                    codebuf.Input(*reinterpret_cast<uint32_t*>(res.obuf + opos), 32);
                     opos += 4;
 #else
-                    codebuf.Input(obuf[opos++], 8);
-                    codebuf.Input(obuf[opos++], 8);
-                    codebuf.Input(obuf[opos++], 8);
-                    codebuf.Input(obuf[opos++], 8);
+                    codebuf.Input(res.obuf[opos++], 8);
+                    codebuf.Input(res.obuf[opos++], 8);
+                    codebuf.Input(res.obuf[opos++], 8);
+                    codebuf.Input(res.obuf[opos++], 8);
 #endif
                 }
 
-                tbuf[i] = decode_table1_fast[codebuf.Peek(kHuffmanMaxLen1Fast)];
-                if (tbuf[i] == uint16_t(-1)) {
-                    tbuf[i] = decode_table1[codebuf.Peek(kHuffmanMaxLen1)];
+                res.tbuf[i] = decode_table1_fast[codebuf.Peek(kHuffmanMaxLen1Fast)];
+                if (res.tbuf[i] == uint16_t(-1)) {
+                    res.tbuf[i] = decode_table1[codebuf.Peek(kHuffmanMaxLen1)];
                 }
 
-                if (tbuf[i] >= kHuffmanCodes1) {
-                    delete lzdecoder;  /* error: literal/length >= kHuffmanCodes1 */
-                    delete [] ibuf;
-                    delete [] obuf;
-                    delete [] tbuf;
+                if (res.tbuf[i] >= kHuffmanCodes1) { /* error: literal/length >= kHuffmanCodes1 */
                     throw std::runtime_error("baidu::zling::Decode(): invalid huffman stream. (bad code1)");
                 }
-                codebuf.Output(length_table1[tbuf[i]]);
+                codebuf.Output(length_table1[res.tbuf[i]]);
 
-                if (tbuf[i] >= 256) {
+                if (res.tbuf[i] >= 256) {
                     uint32_t code;
                     uint32_t bitlen;
                     uint32_t bits;
 
+                    /* error: matchidx.code >= kHuffmanCodes2 */
                     if((code = decode_table2[codebuf.Peek(kHuffmanMaxLen2)]) >= kHuffmanCodes2) {
-                        delete lzdecoder;  /* error: matchidx.code >= kHuffmanCodes2 */
-                        delete [] ibuf;
-                        delete [] obuf;
-                        delete [] tbuf;
                         throw std::runtime_error("baidu::zling::Decode(): invalid huffman stream. (bad code2)");
                     }
                     codebuf.Output(length_table2[code]);
@@ -390,11 +393,8 @@ int Decode(IInputer* inputer, IOutputer* outputer, IActionHandler* action_handle
                     bitlen = IdxBitlenFromCode(code);
                     bits = codebuf.Output(bitlen);
 
-                    if ((tbuf[++i] = IdxFromCodeBits(code, bits)) >= kBucketItemSize) {
-                        delete lzdecoder;  /* error: matchidx >= kBucketItemSize */
-                        delete [] ibuf;
-                        delete [] obuf;
-                        delete [] tbuf;
+                    /* error: matchidx >= kBucketItemSize */
+                    if ((res.tbuf[++i] = IdxFromCodeBits(code, bits)) >= kBucketItemSize) {
                         throw std::runtime_error("baidu::zling::Decode(): invalid huffman stream. (bad ex-bits)");
                     }
                 }
@@ -402,23 +402,19 @@ int Decode(IInputer* inputer, IOutputer* outputer, IActionHandler* action_handle
 
             // ROLZ decode
             // ============================================================
-            if (lzdecoder->Decode(tbuf, ibuf, rlen, encpos, &decpos) == -1) {
-                delete lzdecoder;  /* error: lz.Decode failed */
-                delete [] ibuf;
-                delete [] obuf;
-                delete [] tbuf;
+            if (res.lzdecoder->Decode(res.tbuf, res.ibuf, rlen, encpos, &decpos) == -1) { /* error: lz.Decode failed */
                 throw std::runtime_error("baidu::zling::Decode(): lzdecode failed.");
             }
         }
 
         // output
         for (int ioff = 0; !outputer->IsErr() && ioff < decpos; ) {
-            ioff += outputer->PutData(ibuf + ioff, decpos - ioff);
+            ioff += outputer->PutData(res.ibuf + ioff, decpos - ioff);
             CHECK_IO_ERROR(outputer);
         }
 
         if (action_handler) {
-            action_handler->OnProcess();
+            action_handler->OnProcess(res.ibuf, decpos);
         }
     }
 
@@ -426,12 +422,7 @@ EncodeOrDecodeFinished:
     if (action_handler) {
         action_handler->OnDone();
     }
-    delete lzdecoder;
-    delete [] ibuf;
-    delete [] obuf;
-    delete [] tbuf;
     return (inputer->IsErr() || outputer->IsErr()) ? -1 : 0;
-    return 0;
 }
 
 }  // namespace zling

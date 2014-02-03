@@ -37,12 +37,12 @@
 namespace baidu {
 namespace zling {
 
-int IInputer::GetChar() {
+int Inputer::GetChar() {
     unsigned char ch;
     GetData(&ch, 1);
     return ch;
 }
-uint32_t IInputer::GetUInt32() {
+uint32_t Inputer::GetUInt32() {
     uint32_t v = 0;
     v += GetChar() * 16777216;
     v += GetChar() * 65536;
@@ -51,12 +51,12 @@ uint32_t IInputer::GetUInt32() {
     return v;
 }
 
-int IOutputer::PutChar(int v) {
+int Outputer::PutChar(int v) {
     unsigned char ch = v;
     PutData(&ch, 1);
     return ch;
 }
-uint32_t IOutputer::PutUInt32(uint32_t v) {
+uint32_t Outputer::PutUInt32(uint32_t v) {
     PutChar(v / 16777216 % 256);
     PutChar(v / 65536 % 256);
     PutChar(v / 256 % 256);
