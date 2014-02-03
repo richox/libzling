@@ -27,9 +27,9 @@ Simple benchmark with <b>fp.log</b>(20,617,071 bytes)
 Build & Install
 ===============
 
-You can build zling automatically by cmake with the following command:
+You can build and install zling automatically by cmake with the following command:
 
-    cmake . -DCMAKE_INSTALL_PREFIX=/path/to/install
+    cmake . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/path/to/install
     make
     make install
 
