@@ -1,19 +1,13 @@
 zling
 =====
 
-**fast and lightweight compression utility.**
+*fast and lightweight compression utility and library.*
 
-zling (zlite-ng) is an improved compression utility, based on [zlite](https://github.com/richox/zlite).
+zling is an improved lightweight compression utility and library.
 
-zling shares the same entropy encoder with zlite, but uses an order-1 ROLZ, instead of zlite's order-3 one. and output index is encoded independently with another Polar table plus some extra bits.
+zling uses fast order-1 ROLZ (16MB block size and 10MB dictionary size) followed with Huffman encoding, making it twice as fast as gzip on compressing, while still getting better compression ratio and decompression speed.
 
-in practice, zling compresses better and a bit slower than zlite, but decompresses faster.
-
-simple benchmark with __enwik8__(100,000,000 bytes), with clang-3.2 (linux, -O3):
-
-CPU: Intel Xeon E5-2620
-
-MEM: 128GB
+simple benchmark with _enwik8_(100,000,000 bytes)
 
 <table border="1">
  <tr><td>Tool</td>  <td>Compressed Size</td> <td>Encode</td> <td>Decode</td></tr>
@@ -21,11 +15,7 @@ MEM: 128GB
  <tr><td>gzip</td>  <td>36518322</td>        <td>8.13s</td>  <td>1.47s</td></tr>
 </table>
 
-simple benchmark with __fp.log__(20,617,071 bytes), with clang-3.2 (linux, -O3):
-
-CPU: Intel Xeon E5-2620
-
-MEM: 128GB
+simple benchmark with _fp.log_(20,617,071 bytes)
 
 <table border="1">
  <tr><td>Tool</td>  <td>Compressed Size</td> <td>Encode</td> <td>Decode</td></tr>
