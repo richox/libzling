@@ -63,6 +63,8 @@ int main() {
         baidu::zling::FileInputer  inputer(fin);
         baidu::zling::FileOutputer outputer(fout);
         baidu::zling::Decode(&inputer, &outputer);
+        fclose(fin);
+        fclose(fout);
     }
     return 0;
 }
