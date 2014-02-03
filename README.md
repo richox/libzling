@@ -1,27 +1,26 @@
 zling
 =====
 
-</b>fast and lightweight compression utility and library.</b>
+**fast and lightweight compression utility and library.**
 
 Introduction
 ============
 
-Zling is an improved lightweight compression utility and library. zling uses fast order-1 ROLZ (16MB block size and 10MB dictionary size) followed with Huffman encoding, making it <b>twice as fast as gzip on compressing, while still getting better compression ratio and decompression speed</b>.
+Zling is an improved lightweight compression utility and library. zling uses fast order-1 ROLZ (16MB block size and 10MB dictionary size) followed with Huffman encoding, making it **twice as fast as gzip on compressing, while still getting better compression ratio and decompression speed**.
 
-Simple benchmark with <b>enwik8</b>(100,000,000 bytes)
+Simple benchmark with **enwik8**(100,000,000 bytes)
 
 Tool  | Compressed Size | Encode | Decode |
 ------|-----------------|--------|--------|
 zling | 3219KB          | 3.18s  | 1.02s  |
 gzip  | 3652KB          | 8.13s  | 1.47s  |
 
-Simple benchmark with <b>fp.log</b>(20,617,071 bytes)
+Simple benchmark with **fp.log**(20,617,071 bytes)
 
-<table border="1">
- <tr><td>Tool</td>  <td>Compressed Size</td> <td>Encode</td> <td>Decode</td></tr>
- <tr><td>zling</td> <td>897KB</td>          <td>0.13s</td> <td>0.07s</td></tr>
- <tr><td>gzip</td>  <td>1449KB</td>         <td>0.41s</td> <td>0.14s</td></tr>
-</table>
+Tool  | Compressed Size | Encode | Decode |
+------|-----------------|--------|--------|
+zling | 897KB           | 0.13s  | 0.07s  |
+gzip  | 1449KB          | 0.41s  | 0.14s  |
 
 Build & Install
 ===============
@@ -69,4 +68,4 @@ int main() {
     return 0;
 }
 ```
-However zling supports more complicated interface, see <b>./sample/zling.cpp</b> for details.
+However zling supports more complicated interface, see **./sample/zling.cpp** for details.
