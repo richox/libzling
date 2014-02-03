@@ -150,7 +150,7 @@ struct DecodeResource {
 static const int kFlagRolzContinue = 1;
 static const int kFlagRolzStop     = 0;
 
-int Encode(Inputer* inputer, Outputer* outputer, IActionHandler* action_handler) {
+int Encode(Inputer* inputer, Outputer* outputer, ActionHandler* action_handler) {
     if (action_handler) {
         action_handler->SetInputerOutputer(inputer, outputer, true);
         action_handler->OnInit();
@@ -267,7 +267,7 @@ EncodeOrDecodeFinished:
     return (inputer->IsErr() || outputer->IsErr()) ? -1 : 0;
 }
 
-int Decode(Inputer* inputer, Outputer* outputer, IActionHandler* action_handler) {
+int Decode(Inputer* inputer, Outputer* outputer, ActionHandler* action_handler) {
     if (action_handler) {
         action_handler->SetInputerOutputer(inputer, outputer, false);
         action_handler->OnInit();

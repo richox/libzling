@@ -43,7 +43,7 @@ namespace zling {
 /* Interfaces:
  *  Inputer:       interface for an abstract inputer.
  *  Outputer:      interface for an abstract outputer.
- *  IActionHandler: interface for an abstract action handler (normally used for printing process.)
+ *  ActionHandler: interface for an abstract action handler (normally used for printing process.)
  */
 struct Inputer {
     virtual size_t GetData(unsigned char* buf, size_t len) = 0;
@@ -61,7 +61,7 @@ struct Outputer {
     uint32_t PutUInt32(uint32_t v);
 };
 
-struct IActionHandler {
+struct ActionHandler {
     virtual void OnInit() {}
     virtual void OnDone() {}
     virtual void OnProcess(unsigned char* orig_data, size_t orig_size) {}

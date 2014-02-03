@@ -67,7 +67,7 @@ static inline uint32_t ComputeAdler32(unsigned char* data, size_t size) {
 
 #define ENABLE_ADLER32_CHECKSUM 0
 
-struct DemoActionHandler: baidu::zling::IActionHandler {
+struct DemoActionHandler: baidu::zling::ActionHandler {
     DemoActionHandler() {
         m_clockstart = clock();
     }
