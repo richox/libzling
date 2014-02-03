@@ -36,7 +36,7 @@ You can build zling automatically by cmake with the following command:
 Usage
 =====
 
-Zling provides simple and lightweight interface. here is a simple program showing the base usage of libzling.
+Zling provides simple and lightweight interface. here is a simple program showing the basic usage of libzling.
 
 ```C++
 #include "libzling.h"
