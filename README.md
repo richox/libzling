@@ -25,7 +25,7 @@ gzip  | 1449KB          | 0.41s  | 0.14s  |
 Build & Install
 ===============
 
-You can build and install zling automatically by cmake with the following command:
+You can build and install zling automatically by **cmake** with the following command:
 
     cmake . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/path/to/install
     make
