@@ -35,7 +35,7 @@
 #ifndef SRC_LIBZLING_H
 #define SRC_LIBZLING_H
 
-#include "inc.h"
+#include "libzling_inc.h"
 #include "libzling_utils.h"
 
 namespace baidu {

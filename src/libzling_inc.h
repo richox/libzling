@@ -32,7 +32,7 @@
  * @author zhangli10<zhangli10@baidu.com>
  * @brief  include headers.
  */
-#ifndef SRC_INC_H
+#ifndef SRC_LIBZLING_INC_H
 #define SRC_INC_H
 
 #include <algorithm>
@@ -49,4 +49,4 @@
 #include <inttypes.h>
 #endif
 
-#endif  // SRC_INC_H
+#endif  // SRC_LIBZLING_INC_H
