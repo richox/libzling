@@ -38,6 +38,7 @@ Usage
 
 Zling provides simple and lightweight interface. here is a simple program showing how to work with libzling.
 
+```C++
     #include "libzling.h"
 
     int main() {
@@ -65,5 +66,5 @@ Zling provides simple and lightweight interface. here is a simple program showin
         }
         return 0;
     }
-
+```
 However zling supports more complicated interface, see <b>./sample/zling.cpp</b> for details.
