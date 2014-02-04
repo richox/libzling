@@ -107,6 +107,10 @@ struct EncodeResource {
         lzencoder = new(std::nothrow) ZlingRolzEncoder();
 
         if (!ibuf || !obuf || !tbuf || !lzencoder) {
+            delete lzencoder;
+            delete [] ibuf;
+            delete [] obuf;
+            delete [] tbuf;
             throw std::bad_alloc();
         }
     }
@@ -130,6 +134,10 @@ struct DecodeResource {
         lzdecoder = new(std::nothrow) ZlingRolzDecoder();
 
         if (!ibuf || !obuf || !tbuf || !lzdecoder) {
+            delete lzdecoder;
+            delete [] ibuf;
+            delete [] obuf;
+            delete [] tbuf;
             throw std::bad_alloc();
         }
     }
