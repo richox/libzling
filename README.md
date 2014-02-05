@@ -26,8 +26,8 @@ Build & Install
 ===============
 
 You can build and install libzling automatically by **cmake** with the following command:
-
-    cmake . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/path/to/install
+    cd ./build
+    cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/path/to/install
     make
     make install
 
