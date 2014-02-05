@@ -115,10 +115,10 @@ struct EncodeResource {
         }
     }
     ~EncodeResource() {
-        delete ibuf;
-        delete obuf;
-        delete tbuf;
         delete lzencoder;
+        delete [] ibuf;
+        delete [] obuf;
+        delete [] tbuf;
     }
 };
 struct DecodeResource {
@@ -142,10 +142,10 @@ struct DecodeResource {
         }
     }
     ~DecodeResource() {
-        delete ibuf;
-        delete obuf;
-        delete tbuf;
         delete lzdecoder;
+        delete [] ibuf;
+        delete [] obuf;
+        delete [] tbuf;
     }
 };
 
