@@ -68,4 +68,4 @@ int main() {
     return 0;
 }
 ```
-However libzling supports more complicated interface, see **./sample/zling.cpp** for details.
+However libzling supports more complicated interface, see **./demo/zling.cpp** for details.
