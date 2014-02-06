@@ -83,21 +83,25 @@ struct DemoActionHandler: baidu::zling::ActionHandler {
             return;
         }
 
+        const char* encode_message;
         const char* encode_direction;
         uint64_t isize;
         uint64_t osize;
         double cost_seconds = double(clock() - m_clockstart) / CLOCKS_PER_SEC;
 
         if (IsEncode()) {
+            encode_message = "encode";
             encode_direction = "=>";
             isize = m_inputer->GetInputSize();
             osize = m_outputer->GetOutputSize();
         } else {
+            encode_message = "decode";
             encode_direction = "<=";
             isize = m_outputer->GetOutputSize();
             osize = m_inputer->GetInputSize();
         }
-        fprintf(stderr, "encode: %"PRIu64" %s %"PRIu64", time=%.3f sec, speed=%.3f MB/sec\n",
+        fprintf(stderr, "%s: %"PRIu64" %s %"PRIu64", time=%.3f sec, speed=%.3f MB/sec\n",
+                encode_message,
                 isize,
                 encode_direction,
                 osize,
