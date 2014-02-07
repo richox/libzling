@@ -38,7 +38,7 @@ Usage
 Libling provides simple and lightweight interface. here is a simple program showing the basic usage of libzling. (compiled with `g++ -Wall -O3 zling_sample.cpp -o zling_sample -lzling`)
 
 ```C++
-#include "libzling.h"
+#include "libzling/libzling.h"
 
 int main() {
     // compress
