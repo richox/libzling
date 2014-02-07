@@ -34,6 +34,18 @@
  */
 #include "libzling_huffman.h"
 
+#ifndef __GNUC__  // __builtin_clz() implement on other compilers
+#define __builtin_clz(x) __clz_impl(x)
+
+static inline int __clz_impl(uint32_t x, int c = 32) {
+    while (x > 0) {
+        c -= 1;
+        x /= 2;
+    }
+    return c;
+}
+#endif
+
 namespace baidu {
 namespace zling {
 namespace huffman {
@@ -56,7 +68,9 @@ void ZlingMakeLengthTable(const uint32_t* freq_table,
                           int scaling,
                           int max_codes,
                           int max_codelen) {
-    int symbols[max_codes];
+
+    static const int kMaxCodes = 1024;  /* max_codes > kMaxCodes not supported */
+    int symbols[kMaxCodes];
 
     // init
     for (int i = 0; i < max_codes; i++) {

@@ -103,7 +103,7 @@ struct EncodeResource {
     EncodeResource(): lzencoder(NULL), ibuf(NULL), obuf(NULL), tbuf(NULL) {
         ibuf = new(std::nothrow) unsigned char[kBlockSizeIn];
         obuf = new(std::nothrow) unsigned char[kBlockSizeHuffman + 16];  // avoid overflow on decoding
-        tbuf = new(std::nothrow) unsigned uint16_t[kBlockSizeRolz];
+        tbuf = new(std::nothrow) uint16_t[kBlockSizeRolz];
         lzencoder = new(std::nothrow) ZlingRolzEncoder();
 
         if (!ibuf || !obuf || !tbuf || !lzencoder) {
@@ -130,7 +130,7 @@ struct DecodeResource {
     DecodeResource(): lzdecoder(NULL), ibuf(NULL), obuf(NULL), tbuf(NULL) {
         ibuf = new(std::nothrow) unsigned char[kBlockSizeIn];
         obuf = new(std::nothrow) unsigned char[kBlockSizeHuffman + 16];  // avoid overflow on decoding
-        tbuf = new(std::nothrow) unsigned uint16_t[kBlockSizeRolz];
+        tbuf = new(std::nothrow) uint16_t[kBlockSizeRolz];
         lzdecoder = new(std::nothrow) ZlingRolzDecoder();
 
         if (!ibuf || !obuf || !tbuf || !lzdecoder) {
