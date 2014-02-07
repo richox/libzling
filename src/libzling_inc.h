@@ -41,7 +41,11 @@
 #include <cstring>
 #include <stdexcept>
 
-#if HAS_CXX11_SUPPORT
+#ifdef _MSC_VER
+#include "msinttypes/stdint.h"
+#include "msinttypes/inttypes.h"
+
+#elif HAS_CXX11_SUPPORT
 #include <cstdint>
 #include <cinttypes>
 #else
