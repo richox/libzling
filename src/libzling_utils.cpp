@@ -37,12 +37,12 @@
 namespace baidu {
 namespace zling {
 
-int Inputer::GetChar() {
+int Inputter::GetChar() {
     unsigned char ch;
     GetData(&ch, 1);
     return ch;
 }
-uint32_t Inputer::GetUInt32() {
+uint32_t Inputter::GetUInt32() {
     uint32_t v = 0;
     v += GetChar() * 16777216;
     v += GetChar() * 65536;
@@ -51,12 +51,12 @@ uint32_t Inputer::GetUInt32() {
     return v;
 }
 
-int Outputer::PutChar(int v) {
+int Outputter::PutChar(int v) {
     unsigned char ch = v;
     PutData(&ch, 1);
     return ch;
 }
-uint32_t Outputer::PutUInt32(uint32_t v) {
+uint32_t Outputter::PutUInt32(uint32_t v) {
     PutChar(v / 16777216 % 256);
     PutChar(v / 65536 % 256);
     PutChar(v / 256 % 256);
@@ -64,30 +64,30 @@ uint32_t Outputer::PutUInt32(uint32_t v) {
     return v;
 }
 
-size_t FileInputer::GetData(unsigned char* buf, size_t len) {
+size_t FileInputter::GetData(unsigned char* buf, size_t len) {
     size_t idatasize = fread(buf, 1, len, m_fp);
     m_total_read += idatasize;
     return idatasize;
 }
-bool FileInputer::IsEnd() {
+bool FileInputter::IsEnd() {
     return ungetc(fgetc(m_fp), m_fp) == EOF;
 }
-bool FileInputer::IsErr() {
+bool FileInputter::IsErr() {
     return ferror(m_fp);
 }
-size_t FileInputer::GetInputSize() {
+size_t FileInputter::GetInputSize() {
     return m_total_read;
 }
 
-size_t FileOutputer::PutData(unsigned char* buf, size_t len) {
+size_t FileOutputter::PutData(unsigned char* buf, size_t len) {
     size_t odatasize = fwrite(buf, 1, len, m_fp);
     m_total_write += odatasize;
     return odatasize;
 }
-bool FileOutputer::IsErr() {
+bool FileOutputter::IsErr() {
     return ferror(m_fp);
 }
-size_t FileOutputer::GetOutputSize() {
+size_t FileOutputter::GetOutputSize() {
     return m_total_write;
 }
 

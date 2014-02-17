@@ -158,9 +158,9 @@ struct DecodeResource {
 static const int kFlagRolzContinue = 1;
 static const int kFlagRolzStop     = 0;
 
-int Encode(Inputer* inputer, Outputer* outputer, ActionHandler* action_handler) {
+int Encode(Inputter* inputter, Outputter* outputter, ActionHandler* action_handler) {
     if (action_handler) {
-        action_handler->SetInputerOutputer(inputer, outputer, true);
+        action_handler->SetInputterOutputter(inputter, outputter, true);
         action_handler->OnInit();
     }
 
@@ -170,21 +170,21 @@ int Encode(Inputer* inputer, Outputer* outputer, ActionHandler* action_handler) 
     int olen;
     int encpos;
 
-    while (!inputer->IsEnd() && !inputer->IsErr()) {
+    while (!inputter->IsEnd() && !inputter->IsErr()) {
         rlen = 0;
         ilen = 0;
         olen = 0;
         encpos = 0;
 
-        while(!inputer->IsEnd() && !inputer->IsErr() && ilen < kBlockSizeIn) {
-            ilen += inputer->GetData(res.ibuf + ilen, kBlockSizeIn - ilen);
-            CHECK_IO_ERROR(inputer);
+        while(!inputter->IsEnd() && !inputter->IsErr() && ilen < kBlockSizeIn) {
+            ilen += inputter->GetData(res.ibuf + ilen, kBlockSizeIn - ilen);
+            CHECK_IO_ERROR(inputter);
         }
         res.lzencoder->Reset();
 
         while (encpos < ilen) {
-             outputer->PutChar(kFlagRolzContinue);
-             CHECK_IO_ERROR(outputer);
+             outputter->PutChar(kFlagRolzContinue);
+             CHECK_IO_ERROR(outputter);
 
             // ROLZ encode
             // ============================================================
@@ -250,18 +250,18 @@ int Encode(Inputer* inputer, Outputer* outputer, ActionHandler* action_handler) 
             }
             olen = opos;
 
-            // outputer
-            outputer->PutUInt32(encpos); CHECK_IO_ERROR(outputer);
-            outputer->PutUInt32(rlen);   CHECK_IO_ERROR(outputer);
-            outputer->PutUInt32(olen);   CHECK_IO_ERROR(outputer);
+            // outputter
+            outputter->PutUInt32(encpos); CHECK_IO_ERROR(outputter);
+            outputter->PutUInt32(rlen);   CHECK_IO_ERROR(outputter);
+            outputter->PutUInt32(olen);   CHECK_IO_ERROR(outputter);
 
-            for (int ooff = 0; !outputer->IsErr() && ooff < olen; ) {
-                ooff += outputer->PutData(res.obuf + ooff, olen - ooff);
-                CHECK_IO_ERROR(outputer);
+            for (int ooff = 0; !outputter->IsErr() && ooff < olen; ) {
+                ooff += outputter->PutData(res.obuf + ooff, olen - ooff);
+                CHECK_IO_ERROR(outputter);
             }
         }
-        outputer->PutChar(kFlagRolzStop);
-        CHECK_IO_ERROR(outputer);
+        outputter->PutChar(kFlagRolzStop);
+        CHECK_IO_ERROR(outputter);
 
         if (action_handler) {
             action_handler->OnProcess(res.ibuf, ilen);
@@ -272,12 +272,12 @@ EncodeOrDecodeFinished:
     if (action_handler) {
         action_handler->OnDone();
     }
-    return (inputer->IsErr() || outputer->IsErr()) ? -1 : 0;
+    return (inputter->IsErr() || outputter->IsErr()) ? -1 : 0;
 }
 
-int Decode(Inputer* inputer, Outputer* outputer, ActionHandler* action_handler) {
+int Decode(Inputter* inputter, Outputter* outputter, ActionHandler* action_handler) {
     if (action_handler) {
-        action_handler->SetInputerOutputer(inputer, outputer, false);
+        action_handler->SetInputterOutputter(inputter, outputter, false);
         action_handler->OnInit();
     }
 
@@ -288,14 +288,14 @@ int Decode(Inputer* inputer, Outputer* outputer, ActionHandler* action_handler) 
     int encpos;
     int decpos;
 
-    while (!inputer->IsEnd()) {
+    while (!inputter->IsEnd()) {
         olen = 0;
         rlen = 0;
         decpos = 0;
         res.lzdecoder->Reset();
 
-        while (!inputer->IsEnd()) {
-            encflag = inputer->GetChar();
+        while (!inputter->IsEnd()) {
+            encflag = inputter->GetChar();
 
             if (encflag != kFlagRolzStop && encflag != kFlagRolzContinue) { /* error: invalid encflag */
                 throw std::runtime_error("baidu::zling::Decode(): invalid encflag.");
@@ -304,13 +304,13 @@ int Decode(Inputer* inputer, Outputer* outputer, ActionHandler* action_handler) 
                 break;
             }
 
-            encpos = inputer->GetUInt32(); CHECK_IO_ERROR(inputer);
-            rlen   = inputer->GetUInt32(); CHECK_IO_ERROR(inputer);
-            olen   = inputer->GetUInt32(); CHECK_IO_ERROR(inputer);
+            encpos = inputter->GetUInt32(); CHECK_IO_ERROR(inputter);
+            rlen   = inputter->GetUInt32(); CHECK_IO_ERROR(inputter);
+            olen   = inputter->GetUInt32(); CHECK_IO_ERROR(inputter);
 
-            for (int ooff = 0; !inputer->IsEnd() && ooff < olen; ) {
-                ooff += inputer->GetData(res.obuf + ooff, olen - ooff);
-                CHECK_IO_ERROR(inputer);
+            for (int ooff = 0; !inputter->IsEnd() && ooff < olen; ) {
+                ooff += inputter->GetData(res.obuf + ooff, olen - ooff);
+                CHECK_IO_ERROR(inputter);
             }
 
             // HUFFMAN DECODE
@@ -416,9 +416,9 @@ int Decode(Inputer* inputer, Outputer* outputer, ActionHandler* action_handler) 
         }
 
         // output
-        for (int ioff = 0; !outputer->IsErr() && ioff < decpos; ) {
-            ioff += outputer->PutData(res.ibuf + ioff, decpos - ioff);
-            CHECK_IO_ERROR(outputer);
+        for (int ioff = 0; !outputter->IsErr() && ioff < decpos; ) {
+            ioff += outputter->PutData(res.ibuf + ioff, decpos - ioff);
+            CHECK_IO_ERROR(outputter);
         }
 
         if (action_handler) {
@@ -430,7 +430,7 @@ EncodeOrDecodeFinished:
     if (action_handler) {
         action_handler->OnDone();
     }
-    return (inputer->IsErr() || outputer->IsErr()) ? -1 : 0;
+    return (inputter->IsErr() || outputter->IsErr()) ? -1 : 0;
 }
 
 }  // namespace zling

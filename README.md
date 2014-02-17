@@ -46,10 +46,10 @@ int main() {
         FILE* fin = fopen("./1.txt", "rb");
         FILE* fout = fopen("./1.txt.zlng", "wb");
 
-        baidu::zling::FileInputer  inputer(fin);
-        baidu::zling::FileOutputer outputer(fout);
+        baidu::zling::FileInputter  inputter(fin);
+        baidu::zling::FileOutputter outputter(fout);
 
-        baidu::zling::Encode(&inputer, &outputer);
+        baidu::zling::Encode(&inputter, &outputter);
         fclose(fin);
         fclose(fout);
     }
@@ -59,10 +59,10 @@ int main() {
         FILE* fin = fopen("./1.txt.zlng", "rb");
         FILE* fout = fopen("./2.txt", "wb");
 
-        baidu::zling::FileInputer  inputer(fin);
-        baidu::zling::FileOutputer outputer(fout);
+        baidu::zling::FileInputter  inputter(fin);
+        baidu::zling::FileOutputter outputter(fout);
 
-        baidu::zling::Decode(&inputer, &outputer);
+        baidu::zling::Decode(&inputter, &outputter);
         fclose(fin);
         fclose(fout);
     }

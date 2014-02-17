@@ -39,7 +39,11 @@
 
 #define __STDC_FORMAT_MACROS
 
-#if HAS_CXX11_SUPPORT
+#ifdef _MSC_VER
+#include "msinttypes/stdint.h"
+#include "msinttypes/inttypes.h"
+
+#elif HAS_CXX11_SUPPORT
 #include <cstdint>
 #include <cinttypes>
 #else
@@ -52,7 +56,7 @@
 #include <io.h>
 #endif
 
-#include "libzling.h"
+#include "libzling/libzling.h"
 
 static inline uint32_t ComputeAdler32(unsigned char* data, size_t size) {
     uint32_t a = 1;
@@ -72,12 +76,12 @@ struct DemoActionHandler: baidu::zling::ActionHandler {
         m_clockstart = clock();
     }
     void OnInit() {
-        m_inputer  = dynamic_cast<baidu::zling::FileInputer*>(GetInputer());
-        m_outputer = dynamic_cast<baidu::zling::FileOutputer*>(GetOutputer());
+        m_inputter  = dynamic_cast<baidu::zling::FileInputter*>(GetInputter());
+        m_outputter = dynamic_cast<baidu::zling::FileOutputter*>(GetOutputter());
     }
 
     void OnDone() {
-        if (m_inputer->IsErr() || m_outputer->IsErr()) {
+        if (m_inputter->IsErr() || m_outputter->IsErr()) {
             fprintf(stderr, "I/O error during encode/decode.\n");
             fflush(stderr);
             return;
@@ -92,13 +96,13 @@ struct DemoActionHandler: baidu::zling::ActionHandler {
         if (IsEncode()) {
             encode_message = "encode";
             encode_direction = "=>";
-            isize = m_inputer->GetInputSize();
-            osize = m_outputer->GetOutputSize();
+            isize = m_inputter->GetInputSize();
+            osize = m_outputter->GetOutputSize();
         } else {
             encode_message = "decode";
             encode_direction = "<=";
-            isize = m_outputer->GetOutputSize();
-            osize = m_inputer->GetInputSize();
+            isize = m_outputter->GetOutputSize();
+            osize = m_inputter->GetInputSize();
         }
         fprintf(stderr, "%s: %"PRIu64" %s %"PRIu64", time=%.3f sec, speed=%.3f MB/sec\n",
                 encode_message,
@@ -119,9 +123,9 @@ struct DemoActionHandler: baidu::zling::ActionHandler {
         // adler32 checksum
 #if ENABLE_ADLER32_CHECKSUM
         if (IsEncode()) {
-            m_outputer->PutUInt32(ComputeAdler32(orig_data, orig_size));
+            m_outputter->PutUInt32(ComputeAdler32(orig_data, orig_size));
         } else {
-            if (m_inputer->GetUInt32() != ComputeAdler32(orig_data, orig_size)) {
+            if (m_inputter->GetUInt32() != ComputeAdler32(orig_data, orig_size)) {
                 throw std::runtime_error("baidu::zling::Decode(): adler32 checksum not match.");
             }
         }
@@ -129,12 +133,12 @@ struct DemoActionHandler: baidu::zling::ActionHandler {
 
         if (IsEncode()) {
             encode_direction = "=>";
-            isize = m_inputer->GetInputSize();
-            osize = m_outputer->GetOutputSize();
+            isize = m_inputter->GetInputSize();
+            osize = m_outputter->GetOutputSize();
         } else {
             encode_direction = "<=";
-            isize = m_outputer->GetOutputSize();
-            osize = m_inputer->GetInputSize();
+            isize = m_outputter->GetOutputSize();
+            osize = m_inputter->GetInputSize();
         }
         fprintf(stderr, "%6.2f MB %s %6.2f MB %.2f%%, %.3f sec, speed=%.3f MB/sec\n",
                 isize / 1e6,
@@ -147,14 +151,14 @@ struct DemoActionHandler: baidu::zling::ActionHandler {
     }
 
 private:
-    baidu::zling::FileInputer*  m_inputer;
-    baidu::zling::FileOutputer* m_outputer;
+    baidu::zling::FileInputter*  m_inputter;
+    baidu::zling::FileOutputter* m_outputter;
     clock_t m_clockstart;
 };
 
 int main(int argc, char** argv) {
-    baidu::zling::FileInputer  inputer(stdin);
-    baidu::zling::FileOutputer outputer(stdout);
+    baidu::zling::FileInputter  inputter(stdin);
+    baidu::zling::FileOutputter outputter(stdout);
     DemoActionHandler demo_handler;
 
 #if defined(__MINGW32__) || defined(__MINGW64__)
@@ -189,10 +193,10 @@ int main(int argc, char** argv) {
     // zling <e/d> (stdin) (stdout)
     try {
         if (argc == 2 && strcmp(argv[1], "e") == 0) {
-            return baidu::zling::Encode(&inputer, &outputer, &demo_handler);
+            return baidu::zling::Encode(&inputter, &outputter, &demo_handler);
         }
         if (argc == 2 && strcmp(argv[1], "d") == 0) {
-            return baidu::zling::Decode(&inputer, &outputer, &demo_handler);
+            return baidu::zling::Decode(&inputter, &outputter, &demo_handler);
         }
 
     } catch (const std::runtime_error& e) {
