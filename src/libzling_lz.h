@@ -45,6 +45,7 @@ static const int kBucketItemSize = 4096;
 static const int kBucketItemHash = 8192;
 static const int kMatchDiscardMinLen = 3072;
 static const int kMatchDepth = 8;
+static const int kMatchMinLenEnableLazy = 192;
 static const int kMatchMinLen = 4;
 static const int kMatchMaxLen = 259;
 
