@@ -38,6 +38,10 @@ namespace baidu {
 namespace zling {
 namespace lz {
 
+static inline uint32_t HashContext(unsigned char* ptr) __attribute__((pure));
+static inline uint32_t RollingAdd(uint32_t x, uint32_t y) __attribute__((pure));
+static inline uint32_t RollingSub(uint32_t x, uint32_t y) __attribute__((pure));
+
 static inline uint32_t HashContext(unsigned char* ptr) {
     return (*reinterpret_cast<uint32_t*>(ptr) + ptr[2] * 137 + ptr[3] * 13337);
 }
@@ -168,34 +172,35 @@ int inline ZlingRolzEncoder::MatchAndUpdate(unsigned char* buf, int pos, int* ma
     }
 
     if (maxlen >= kMatchMinLen + (maxidx >= kMatchDiscardMinLen)) {
-        if (maxlen < kMatchMinLenEnableLazy) {  // fast and stupid lazy parsing (next 1 position)
-            ZlingEncodeBucket* bucket = &m_buckets[buf[pos]];
-            int node1 = bucket->hash[HashContext(buf + pos + 1) % kBucketItemHash];
-            int node2 = bucket->suffix[node1];
-
-            uint32_t fetch0 = *reinterpret_cast<uint32_t*>(buf + pos + 1 + maxlen - 3);
-            uint32_t fetch1 = *reinterpret_cast<uint32_t*>(buf + (bucket->offset[node1] & 0xffffff) + maxlen - 3);
-            uint32_t fetch2 = *reinterpret_cast<uint32_t*>(buf + (bucket->offset[node2] & 0xffffff) + maxlen - 3);
-
-            if (fetch0 == fetch1 && fetch0 == fetch2) {
+        if (maxlen < kMatchMinLenEnableLazy) {  // fast and stupid lazy parsing
+            if (MatchTestLazy<1, 2>(buf, pos, maxlen)) {
+                return 0;
+            }
+            if (MatchTestLazy<2, 1>(buf, pos, maxlen)) {
                 return 0;
             }
         }
-        if (maxlen < kMatchMinLenEnableLazy) {  // fast and stupid lazy parsing (next 2 position)
-            ZlingEncodeBucket* bucket = &m_buckets[buf[pos + 1]];
-            int node1 = bucket->hash[HashContext(buf + pos + 2) % kBucketItemHash];
-
-            uint32_t fetch0 = *reinterpret_cast<uint32_t*>(buf + pos + 2 + maxlen - 3);
-            uint32_t fetch1 = *reinterpret_cast<uint32_t*>(buf + (bucket->offset[node1] & 0xffffff) + maxlen - 3);
-
-            if (fetch0 == fetch1) {
-                return 0;
-            }
-        }
-
-        *match_len = maxlen;
-        *match_idx = maxidx;
+        match_len[0] = maxlen;
+        match_idx[0] = maxidx;
         return 1;
+    }
+    return 0;
+}
+
+template<int next, int depth> int inline ZlingRolzEncoder::MatchTestLazy(unsigned char* buf, int pos, int maxlen) {
+    ZlingEncodeBucket* bucket = &m_buckets[buf[pos - 1 + next]];
+    int node = bucket->hash[HashContext(buf + pos + next) % kBucketItemHash];
+
+    uint32_t fetch_current = *reinterpret_cast<uint32_t*>(buf + pos + next + maxlen - 3);
+    uint32_t fetch_match;
+
+    for (int i = 0; i < depth; i++) {
+        fetch_match = *reinterpret_cast<uint32_t*>(buf + (bucket->offset[node] & 0xffffff) + maxlen - 3);
+
+        if (fetch_current == fetch_match) {
+            return 1;
+        }
+        node = bucket->suffix[node];
     }
     return 0;
 }
@@ -245,7 +250,7 @@ void ZlingRolzDecoder::Reset() {
     return;
 }
 
-int ZlingRolzDecoder::GetMatchAndUpdate(unsigned char* buf, int pos, int idx) {
+int inline ZlingRolzDecoder::GetMatchAndUpdate(unsigned char* buf, int pos, int idx) {
     ZlingDecodeBucket* bucket = &m_buckets[buf[pos - 1]];
     int node;
 

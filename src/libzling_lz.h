@@ -45,7 +45,7 @@ static const int kBucketItemSize = 4096;
 static const int kBucketItemHash = 8192;
 static const int kMatchDiscardMinLen = 3072;
 static const int kMatchDepth = 8;
-static const int kMatchMinLenEnableLazy = 192;
+static const int kMatchMinLenEnableLazy = 128;
 static const int kMatchMinLen = 4;
 static const int kMatchMaxLen = 259;
 
@@ -79,6 +79,8 @@ private:
 
     ZlingRolzEncoder(const ZlingRolzEncoder&);
     ZlingRolzEncoder& operator = (const ZlingRolzEncoder&);
+
+    template<int next, int depth> int MatchTestLazy(unsigned char* buf, int pos, int maxlen);
 };
 
 class ZlingRolzDecoder {

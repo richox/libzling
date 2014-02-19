@@ -12,14 +12,14 @@ Simple benchmark with **enwik8**(100,000,000 bytes)
 
 Tool  | Compressed Size | Encode | Decode |
 ------|-----------------|--------|--------|
-zling | 3219KB          | 3.18s  | 1.02s  |
-gzip  | 3652KB          | 8.13s  | 1.47s  |
+zling | 31310KB         | 3.84s  | 1.07s  |
+gzip  | 36520KB         | 8.13s  | 1.47s  |
 
 Simple benchmark with **fp.log**(20,617,071 bytes)
 
 Tool  | Compressed Size | Encode | Decode |
 ------|-----------------|--------|--------|
-zling | 897KB           | 0.13s  | 0.07s  |
+zling | 913KB           | 0.15s  | 0.07s  |
 gzip  | 1449KB          | 0.41s  | 0.14s  |
 
 Build & Install
