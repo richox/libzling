@@ -173,10 +173,10 @@ int inline ZlingRolzEncoder::MatchAndUpdate(unsigned char* buf, int pos, int* ma
 
     if (maxlen >= kMatchMinLen + (maxidx >= kMatchDiscardMinLen)) {
         if (maxlen < kMatchMinLenEnableLazy) {  // fast and stupid lazy parsing
-            if (MatchTestLazy<1, 2>(buf, pos, maxlen)) {
+            if (MatchLazy(buf, pos + 1, maxlen, 2)) {
                 return 0;
             }
-            if (MatchTestLazy<2, 1>(buf, pos, maxlen)) {
+            if (MatchLazy(buf, pos + 2, maxlen, 1)) {
                 return 0;
             }
         }
@@ -187,11 +187,11 @@ int inline ZlingRolzEncoder::MatchAndUpdate(unsigned char* buf, int pos, int* ma
     return 0;
 }
 
-template<int next, int depth> int inline ZlingRolzEncoder::MatchTestLazy(unsigned char* buf, int pos, int maxlen) {
-    ZlingEncodeBucket* bucket = &m_buckets[buf[pos - 1 + next]];
-    int node = bucket->hash[HashContext(buf + pos + next) % kBucketItemHash];
+int inline ZlingRolzEncoder::MatchLazy(unsigned char* buf, int pos, int maxlen, int depth) {
+    ZlingEncodeBucket* bucket = &m_buckets[buf[pos - 1]];
+    int node = bucket->hash[HashContext(buf + pos) % kBucketItemHash];
 
-    uint32_t fetch_current = *reinterpret_cast<uint32_t*>(buf + pos + next + maxlen - 3);
+    uint32_t fetch_current = *reinterpret_cast<uint32_t*>(buf + pos + maxlen - 3);
     uint32_t fetch_match;
 
     for (int i = 0; i < depth; i++) {

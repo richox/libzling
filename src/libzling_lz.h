@@ -68,6 +68,7 @@ public:
 
 private:
     int MatchAndUpdate(unsigned char* buf, int pos, int* match_idx, int* match_len, int match_depth);
+    int MatchLazy(unsigned char* buf, int pos, int maxlen, int depth);
 
     struct ZlingEncodeBucket {
         uint16_t suffix[kBucketItemSize];
@@ -79,8 +80,6 @@ private:
 
     ZlingRolzEncoder(const ZlingRolzEncoder&);
     ZlingRolzEncoder& operator = (const ZlingRolzEncoder&);
-
-    template<int next, int depth> int MatchTestLazy(unsigned char* buf, int pos, int maxlen);
 };
 
 class ZlingRolzDecoder {
