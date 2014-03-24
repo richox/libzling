@@ -192,8 +192,24 @@ int main(int argc, char** argv) {
 
     // zling <e/d> (stdin) (stdout)
     try {
+        if (argc == 2 && strcmp(argv[1], "e4") == 0) {
+            return baidu::zling::Encode(&inputter, &outputter, &demo_handler, 4);
+        }
+        if (argc == 2 && strcmp(argv[1], "e3") == 0) {
+            return baidu::zling::Encode(&inputter, &outputter, &demo_handler, 3);
+        }
+        if (argc == 2 && strcmp(argv[1], "e2") == 0) {
+            return baidu::zling::Encode(&inputter, &outputter, &demo_handler, 2);
+        }
+        if (argc == 2 && strcmp(argv[1], "e1") == 0) {
+            return baidu::zling::Encode(&inputter, &outputter, &demo_handler, 1);
+        }
+        if (argc == 2 && strcmp(argv[1], "e0") == 0) {
+            return baidu::zling::Encode(&inputter, &outputter, &demo_handler, 0);
+        }
+
         if (argc == 2 && strcmp(argv[1], "e") == 0) {
-            return baidu::zling::Encode(&inputter, &outputter, &demo_handler);
+            return baidu::zling::Encode(&inputter, &outputter, &demo_handler, 0);
         }
         if (argc == 2 && strcmp(argv[1], "d") == 0) {
             return baidu::zling::Decode(&inputter, &outputter, &demo_handler);
@@ -210,9 +226,10 @@ int main(int argc, char** argv) {
 
     // help message
     fprintf(stderr, "usage:\n");
-    fprintf(stderr, "   zling e source target\n");
+    fprintf(stderr, "   zling e[N=0,1,2,3,4] source target\n");
     fprintf(stderr, "   zling d source target\n");
-    fprintf(stderr, "    * source: default to stdin\n");
-    fprintf(stderr, "    * target: default to stdout\n");
+    fprintf(stderr, "    * source: (default: stdin)\n");
+    fprintf(stderr, "    * target: (default: stdout)\n");
+    fprintf(stderr, "    * N:      (default: 0) compression level, bigger level for better and slower compression.\n");
     return -1;
 }

@@ -41,7 +41,7 @@
 namespace baidu {
 namespace zling {
 
-int Encode(Inputter* inputter, Outputter* outputter, ActionHandler* action_handler = NULL);
+int Encode(Inputter* inputter, Outputter* outputter, ActionHandler* action_handler = NULL, int level = 0);
 int Decode(Inputter* inputter, Outputter* outputter, ActionHandler* action_handler = NULL);
 
 }  // namespace zling

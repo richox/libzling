@@ -92,7 +92,7 @@ int ZlingRolzEncoder::Encode(unsigned char* ibuf, uint16_t* obuf, int ilen, int 
         int match_idx;
         int match_len;
 
-        if (MatchAndUpdate(ibuf, ipos, &match_idx, &match_len, kMatchDepth)) {
+        if (MatchAndUpdate(ibuf, ipos, &match_idx, &match_len, m_match_depth)) {
             obuf[opos++] = 256 + match_len - kMatchMinLen;  // encode as match
             obuf[opos++] = match_idx;
             ipos += match_len;
@@ -173,10 +173,10 @@ int inline ZlingRolzEncoder::MatchAndUpdate(unsigned char* buf, int pos, int* ma
 
     if (maxlen >= kMatchMinLen + (maxidx >= kMatchDiscardMinLen)) {
         if (maxlen < kMatchMinLenEnableLazy) {  // fast and stupid lazy parsing
-            if (MatchLazy(buf, pos + 1, maxlen, 2)) {
+            if (m_lazymatch1_depth > 0 && MatchLazy(buf, pos + 1, maxlen, m_lazymatch1_depth)) {
                 return 0;
             }
-            if (MatchLazy(buf, pos + 2, maxlen, 1)) {
+            if (m_lazymatch2_depth > 0 && MatchLazy(buf, pos + 2, maxlen, m_lazymatch2_depth)) {
                 return 0;
             }
         }

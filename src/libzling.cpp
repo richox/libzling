@@ -100,11 +100,11 @@ struct EncodeResource {
     unsigned char* obuf;
     uint16_t* tbuf;
 
-    EncodeResource(): lzencoder(NULL), ibuf(NULL), obuf(NULL), tbuf(NULL) {
+    EncodeResource(int level): lzencoder(NULL), ibuf(NULL), obuf(NULL), tbuf(NULL) {
         ibuf = new(std::nothrow) unsigned char[kBlockSizeIn];
         obuf = new(std::nothrow) unsigned char[kBlockSizeHuffman + 16];  // avoid overflow on decoding
         tbuf = new(std::nothrow) uint16_t[kBlockSizeRolz];
-        lzencoder = new(std::nothrow) ZlingRolzEncoder();
+        lzencoder = new(std::nothrow) ZlingRolzEncoder(level);
 
         if (!ibuf || !obuf || !tbuf || !lzencoder) {
             delete lzencoder;
@@ -158,13 +158,13 @@ struct DecodeResource {
 static const int kFlagRolzContinue = 1;
 static const int kFlagRolzStop     = 0;
 
-int Encode(Inputter* inputter, Outputter* outputter, ActionHandler* action_handler) {
+int Encode(Inputter* inputter, Outputter* outputter, ActionHandler* action_handler, int level) {
     if (action_handler) {
         action_handler->SetInputterOutputter(inputter, outputter, true);
         action_handler->OnInit();
     }
 
-    EncodeResource res;
+    EncodeResource res(level);
     int rlen;
     int ilen;
     int olen;
