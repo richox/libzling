@@ -10,16 +10,24 @@ Libzling is an improved lightweight compression utility and library. libzling us
 
 Simple benchmark with **enwik8**(100,000,000 bytes)
 
-Tool  | Compressed Size | Encode | Decode |
-------|-----------------|--------|--------|
-zling | 31310KB         | 3.84s  | 1.07s  |
-gzip  | 36520KB         | 8.13s  | 1.47s  |
+Tool    | Compressed Size | Encode | Decode |
+--------|-----------------|--------|--------|
+zling d0| 33391KB         | 2.54s  | 1.13s  |
+zling e1| 32614KB         | 2.90s  | 1.10s  |
+zling d2| 31732KB         | 3.39s  | 1.08s  |
+zling e3| 31310KB         | 3.95s  | 1.05s  |
+zling e4| 30862KB         | 6.02s  | 1.03s  |
+gzip    | 36520KB         | 8.13s  | 1.47s  |
 
 Simple benchmark with **fp.log**(20,617,071 bytes)
 
 Tool  | Compressed Size | Encode | Decode |
 ------|-----------------|--------|--------|
-zling | 913KB           | 0.15s  | 0.07s  |
+zling | 987KB           | 0.10s  | 0.07s  |
+zling | 925KB           | 0.11s  | 0.07s  |
+zling | 902KB           | 0.14s  | 0.07s  |
+zling | 913KB           | 0.17s  | 0.07s  |
+zling | 918KB           | 0.33s  | 0.07s  |
 gzip  | 1449KB          | 0.41s  | 0.14s  |
 
 Build & Install
