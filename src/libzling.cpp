@@ -49,22 +49,18 @@ using lz::kMatchMaxLen;
 using lz::kMatchMinLen;
 using lz::kBucketItemSize;
 
-static const unsigned char matchidx_bitlen[] = {
-#include "ztable_matchidx_blen.inc"  /* include auto-generated constant tables */
+static const uint32_t matchidx_bitlen[] = {
+#   include "ztable_matchidx_blen.inc"  /* include auto-generated constant tables */
 };
-
-static const unsigned char matchidx_code[] = {
-#include "ztable_matchidx_code.inc"  /* include auto-generated constant tables */
+static const uint32_t matchidx_code[] = {
+#   include "ztable_matchidx_code.inc"  /* include auto-generated constant tables */
 };
-static const unsigned char matchidx_bits[] = {
-#include "ztable_matchidx_bits.inc"  /* include auto-generated constant tables */
+static const uint32_t matchidx_bits[] = {
+#   include "ztable_matchidx_bits.inc"  /* include auto-generated constant tables */
 };
-static const uint16_t matchidx_base[] = {
-#include "ztable_matchidx_base.inc"  /* include auto-generated constant tables */
+static const uint32_t matchidx_base[] = {
+#   include "ztable_matchidx_base.inc"  /* include auto-generated constant tables */
 };
-
-static const int kMatchidxCodeSymbols = sizeof(matchidx_bitlen) / sizeof(matchidx_bitlen[0]);
-static const int kMatchidxMaxBitlen = 8;
 
 static inline uint32_t IdxToCode(uint32_t idx) {
     return matchidx_code[idx];
@@ -84,7 +80,7 @@ static inline uint32_t IdxFromCodeBits(uint32_t code, uint32_t bits) {
 }
 
 static const int kHuffmanCodes1      = 256 + (kMatchMaxLen - kMatchMinLen + 1);
-static const int kHuffmanCodes2      = kMatchidxCodeSymbols;
+static const int kHuffmanCodes2      = sizeof(matchidx_base) / sizeof(matchidx_base[0]);
 static const int kHuffmanMaxLen1     = 15;
 static const int kHuffmanMaxLen2     = 8;
 static const int kHuffmanMaxLen1Fast = 10;
@@ -237,7 +233,7 @@ int Encode(Inputter* inputter, Outputter* outputter, ActionHandler* action_handl
                         IdxToBits(res.tbuf[i]),
                         IdxToBitlen(res.tbuf[i]));
                 }
-                while (codebuf.GetLength() >= 32) {
+                if (codebuf.GetLength() >= 32) {
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
                     *reinterpret_cast<uint32_t*>(res.obuf + opos) = codebuf.Output(32);
                     opos += 4;
@@ -369,7 +365,7 @@ int Decode(Inputter* inputter, Outputter* outputter, ActionHandler* action_handl
 
             // decode
             for (int i = 0; i < rlen; i++) {
-                while (codebuf.GetLength() < 32) {
+                if (codebuf.GetLength() < 32) {
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
                     codebuf.Input(*reinterpret_cast<uint32_t*>(res.obuf + opos), 32);
                     opos += 4;

@@ -3,51 +3,30 @@
 # table auto-generator for zling.
 # author: Zhang Li <zhangli10@baidu.com>
 
-matchidx_bitlen = [
-    0, 0, 0, 0,
-    1, 1,
-    2, 2,
-    3, 3,
-    4, 4,
-    5, 5,
-    6, 6,
-    7, 7,
-    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+kBucketItemSize = 4096
 
-kBucketItemSize      = 4096
-kMatchidxMaxBitlen   = 8
-kMatchidxCodeSymbols = len(matchidx_bitlen)
+matchidx_blen = [0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7] + [8] * 1024
+matchidx_code = []
+matchidx_bits = []
+matchidx_base = []
 
-matchidx_code = [0] * kBucketItemSize
-matchidx_bits = [0] * kBucketItemSize
-matchidx_base = [0] * kMatchidxCodeSymbols
+#for i in range(0, kBucketItemSize):
+while matchidx_code.__len__() < kBucketItemSize:
+    matchidx_base.append(matchidx_code.__len__())
 
-code = 0
-bits = 0
+    for bits in range(0, 1 << matchidx_blen[matchidx_base.__len__() - 1]):
+        matchidx_bits.append(bits)
+        matchidx_code.append(matchidx_base.__len__() - 1)
 
-for i in range(0, kBucketItemSize):
-    matchidx_code[i] = code
-    matchidx_bits[i] = bits
+f_blen = open("ztable_matchidx_blen.inc", "w")
+f_base = open("ztable_matchidx_base.inc", "w")
+f_code = open("ztable_matchidx_code.inc", "w")
+f_bits = open("ztable_matchidx_bits.inc", "w")
 
-    if i + 1 < kBucketItemSize:
-        bits += 1
-        if bits >> matchidx_bitlen[code] != 0:
-            bits  = 0
-            code += 1
-            matchidx_base[code] = i + 1
+for i in range(0, matchidx_base.__len__()):
+    f_blen.write("%4u," % matchidx_blen[i] + "\n\x20" [int(i % 16 != 15)])
+    f_base.write("%4u," % matchidx_base[i] + "\n\x20" [int(i % 16 != 15)])
 
-with open("ztable_matchidx_blen.inc", "w") as f:
-    for i in range(0, kMatchidxCodeSymbols):
-        f.write("%1u," % matchidx_bitlen[i] + "\n\x20" [int(i % 16 != 15)])
-
-with open("ztable_matchidx_code.inc", "w") as f:
-    for i in range(0, kBucketItemSize):
-        f.write("%2u," % matchidx_code[i] + "\n\x20" [int(i % 16 != 15)])
-
-with open("ztable_matchidx_bits.inc", "w") as f:
-    for i in range(0, kBucketItemSize):
-        f.write("%3u," % matchidx_bits[i] + "\n\x20" [int(i % 16 != 15)])
-
-with open("ztable_matchidx_base.inc", "w") as f:
-    for i in range(0, kMatchidxCodeSymbols):
-        f.write("%4u," % matchidx_base[i] + "\n\x20" [int(i % 16 != 15)])
+for i in range(0, matchidx_code.__len__()):
+    f_code.write("%4u," % matchidx_code[i] + "\n\x20" [int(i % 16 != 15)])
+    f_bits.write("%4u," % matchidx_bits[i] + "\n\x20" [int(i % 16 != 15)])
