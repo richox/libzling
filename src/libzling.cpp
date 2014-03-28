@@ -215,10 +215,14 @@ int Encode(Inputter* inputter, Outputter* outputter, ActionHandler* action_handl
 
             // write length table
             for (int i = 0; i < kHuffmanCodes1; i += 2) {
-                res.obuf[opos++] = length_table1[i] * 16 + length_table1[i + 1];
+                res.obuf[opos++] = (i + 1 >= kHuffmanCodes1) ?
+                    length_table1[i] * 16 :
+                    length_table1[i] * 16 + length_table1[i + 1];
             }
             for (int i = 0; i < kHuffmanCodes2; i += 2) {
-                res.obuf[opos++] = length_table2[i] * 16 + length_table2[i + 1];
+                res.obuf[opos++] = (i + 1 >= kHuffmanCodes2) ?
+                    length_table2[i] * 16 :
+                    length_table2[i] * 16 + length_table2[i + 1];
             }
 
             // encode
@@ -327,13 +331,13 @@ int Decode(Inputter* inputter, Outputter* outputter, ActionHandler* action_handl
 
             // read length table
             for (int i = 0; i < kHuffmanCodes1; i += 2) {
-                length_table1[i] =     res.obuf[opos] / 16;
-                length_table1[i + 1] = res.obuf[opos] % 16;
+                length_table1[i] = res.obuf[opos] / 16;
+                i + 1 < kHuffmanMaxLen1 && (length_table1[i + 1] = res.obuf[opos] % 16);
                 opos++;
             }
             for (int i = 0; i < kHuffmanCodes2; i += 2) {
-                length_table2[i] =     res.obuf[opos] / 16;
-                length_table2[i + 1] = res.obuf[opos] % 16;
+                length_table2[i] = res.obuf[opos] / 16;
+                i + 1 < kHuffmanMaxLen2 && (length_table2[i + 1] = res.obuf[opos] % 16);
                 opos++;
             }
             if (opos % 4 != 0) opos++;  // keep aligned
