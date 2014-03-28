@@ -8,7 +8,7 @@ Introduction
 
 Libzling is an improved lightweight compression utility and library. libzling uses fast order-1 ROLZ (16MB block size and 10MB dictionary size) followed with Huffman encoding, making it **twice as fast as gzip on compressing, while still getting better compression ratio and decompression speed**.
 
-Simple benchmark with **enwik8**(100,000,000 bytes)
+Simple benchmark with **enwik8**(100,000,000 bytes), also on [Large Text Compression Benchmark (thanks to Matt Mahoney)](http://mattmahoney.net/dc/text.html#2702)
 
 Tool    | Compressed Size | Encode | Decode |
 --------|-----------------|--------|--------|
