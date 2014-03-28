@@ -10,17 +10,14 @@ matchidx_code = []
 matchidx_bits = []
 matchidx_base = []
 
-while matchidx_code.__len__() < kBucketItemSize:
-    matchidx_base.append(matchidx_code.__len__())
-
-    for bits in range(0, 1 << matchidx_blen[matchidx_base.__len__() - 1]):
-        matchidx_bits.append(bits)
-        matchidx_code.append(matchidx_base.__len__() - 1)
+while len(matchidx_code) < kBucketItemSize:
+    for bits in range(2 ** matchidx_blen[len(matchidx_base)]):
+        matchidx_code.append(len(matchidx_base))
+    matchidx_base.append(len(matchidx_code) - 2 ** matchidx_blen[len(matchidx_base)])
 
 f_blen = open("ztable_matchidx_blen.inc", "w")
 f_base = open("ztable_matchidx_base.inc", "w")
 f_code = open("ztable_matchidx_code.inc", "w")
-f_bits = open("ztable_matchidx_bits.inc", "w")
 
 for i in range(0, matchidx_base.__len__()):
     f_blen.write("%4u," % matchidx_blen[i] + "\n\x20" [int(i % 16 != 15)])
@@ -28,4 +25,3 @@ for i in range(0, matchidx_base.__len__()):
 
 for i in range(0, matchidx_code.__len__()):
     f_code.write("%4u," % matchidx_code[i] + "\n\x20" [int(i % 16 != 15)])
-    f_bits.write("%4u," % matchidx_bits[i] + "\n\x20" [int(i % 16 != 15)])

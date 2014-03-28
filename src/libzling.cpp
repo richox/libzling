@@ -55,35 +55,16 @@ static const uint32_t matchidx_bitlen[] = {
 static const uint32_t matchidx_code[] = {
 #   include "ztable_matchidx_code.inc"  /* include auto-generated constant tables */
 };
-static const uint32_t matchidx_bits[] = {
-#   include "ztable_matchidx_bits.inc"  /* include auto-generated constant tables */
-};
 static const uint32_t matchidx_base[] = {
 #   include "ztable_matchidx_base.inc"  /* include auto-generated constant tables */
 };
-
-static inline uint32_t IdxToCode(uint32_t idx) {
-    return matchidx_code[idx];
-}
-static inline uint32_t IdxToBits(uint32_t idx) {
-    return matchidx_bits[idx];
-}
-static inline uint32_t IdxToBitlen(uint32_t idx) {
-    return matchidx_bitlen[matchidx_code[idx]];
-}
-
-static inline uint32_t IdxBitlenFromCode(uint32_t code) {
-    return matchidx_bitlen[code];
-}
-static inline uint32_t IdxFromCodeBits(uint32_t code, uint32_t bits) {
-    return matchidx_base[code] | bits;
-}
 
 static const int kHuffmanCodes1      = 256 + (kMatchMaxLen - kMatchMinLen + 1);
 static const int kHuffmanCodes2      = sizeof(matchidx_base) / sizeof(matchidx_base[0]);
 static const int kHuffmanMaxLen1     = 15;
 static const int kHuffmanMaxLen2     = 8;
 static const int kHuffmanMaxLen1Fast = 10;
+static const int kSentinelLen        = kMatchMaxLen + 16;
 
 static const int kBlockSizeIn      = 16777216;
 static const int kBlockSizeRolz    = 262144;
@@ -97,9 +78,9 @@ struct EncodeResource {
     uint16_t* tbuf;
 
     EncodeResource(int level): lzencoder(NULL), ibuf(NULL), obuf(NULL), tbuf(NULL) {
-        ibuf = new(std::nothrow) unsigned char[kBlockSizeIn];
-        obuf = new(std::nothrow) unsigned char[kBlockSizeHuffman + 16];  // avoid overflow on decoding
-        tbuf = new(std::nothrow) uint16_t[kBlockSizeRolz];
+        ibuf = new(std::nothrow) unsigned char[kBlockSizeIn + kSentinelLen];
+        obuf = new(std::nothrow) unsigned char[kBlockSizeHuffman + kSentinelLen];
+        tbuf = new(std::nothrow) uint16_t[kBlockSizeRolz + kSentinelLen];
         lzencoder = new(std::nothrow) ZlingRolzEncoder(level);
 
         if (!ibuf || !obuf || !tbuf || !lzencoder) {
@@ -124,9 +105,9 @@ struct DecodeResource {
     uint16_t* tbuf;
 
     DecodeResource(): lzdecoder(NULL), ibuf(NULL), obuf(NULL), tbuf(NULL) {
-        ibuf = new(std::nothrow) unsigned char[kBlockSizeIn];
-        obuf = new(std::nothrow) unsigned char[kBlockSizeHuffman + 16];  // avoid overflow on decoding
-        tbuf = new(std::nothrow) uint16_t[kBlockSizeRolz];
+        ibuf = new(std::nothrow) unsigned char[kBlockSizeIn + kSentinelLen];
+        obuf = new(std::nothrow) unsigned char[kBlockSizeHuffman + kSentinelLen];
+        tbuf = new(std::nothrow) uint16_t[kBlockSizeRolz + kSentinelLen];
         lzdecoder = new(std::nothrow) ZlingRolzDecoder();
 
         if (!ibuf || !obuf || !tbuf || !lzdecoder) {
@@ -176,6 +157,8 @@ int Encode(Inputter* inputter, Outputter* outputter, ActionHandler* action_handl
             ilen += inputter->GetData(res.ibuf + ilen, kBlockSizeIn - ilen);
             CHECK_IO_ERROR(inputter);
         }
+        memset(res.ibuf + ilen, 0, kSentinelLen);
+
         res.lzencoder->Reset();
 
         while (encpos < ilen) {
@@ -200,7 +183,7 @@ int Encode(Inputter* inputter, Outputter* outputter, ActionHandler* action_handl
             for (int i = 0; i < rlen; i++) {
                 freq_table1[res.tbuf[i]] += 1;
                 if (res.tbuf[i] >= 256) {
-                    freq_table2[IdxToCode(res.tbuf[++i])] += 1;
+                    freq_table2[matchidx_code[res.tbuf[++i]]] += 1;
                 }
             }
             ZlingMakeLengthTable(freq_table1, length_table1, 0, kHuffmanCodes1, kHuffmanMaxLen1);
@@ -225,13 +208,14 @@ int Encode(Inputter* inputter, Outputter* outputter, ActionHandler* action_handl
             for (int i = 0; i < rlen; i++) {
                 codebuf.Input(encode_table1[res.tbuf[i]], length_table1[res.tbuf[i]]);
                 if (res.tbuf[i] >= 256) {
-                    i++;
+                    uint32_t code = matchidx_code[res.tbuf[++i]];
+
                     codebuf.Input(
-                        encode_table2[IdxToCode(res.tbuf[i])],
-                        length_table2[IdxToCode(res.tbuf[i])]);
+                        encode_table2[code],
+                        length_table2[code]);
                     codebuf.Input(
-                        IdxToBits(res.tbuf[i]),
-                        IdxToBitlen(res.tbuf[i]));
+                        res.tbuf[i] - matchidx_base[code],
+                        matchidx_bitlen[code]);
                 }
                 if (codebuf.GetLength() >= 32) {
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
@@ -312,6 +296,7 @@ int Decode(Inputter* inputter, Outputter* outputter, ActionHandler* action_handl
                 ooff += inputter->GetData(res.obuf + ooff, olen - ooff);
                 CHECK_IO_ERROR(inputter);
             }
+            memset(res.obuf + olen, 0, kSentinelLen);
 
             // HUFFMAN DECODE
             // ============================================================
@@ -397,12 +382,10 @@ int Decode(Inputter* inputter, Outputter* outputter, ActionHandler* action_handl
                         throw std::runtime_error("baidu::zling::Decode(): invalid huffman stream. (bad code2)");
                     }
                     codebuf.Output(length_table2[code]);
-
-                    bitlen = IdxBitlenFromCode(code);
-                    bits = codebuf.Output(bitlen);
+                    bits = codebuf.Output(matchidx_bitlen[code]);
 
                     /* error: matchidx >= kBucketItemSize */
-                    if ((res.tbuf[++i] = IdxFromCodeBits(code, bits)) >= kBucketItemSize) {
+                    if ((res.tbuf[++i] = matchidx_base[code] + bits) >= kBucketItemSize) {
                         throw std::runtime_error("baidu::zling::Decode(): invalid huffman stream. (bad ex-bits)");
                     }
                 }

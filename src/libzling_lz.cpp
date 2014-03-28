@@ -88,7 +88,7 @@ int ZlingRolzEncoder::Encode(unsigned char* ibuf, uint16_t* obuf, int ilen, int 
         obuf[opos++] = ibuf[ipos++];
     }
 
-    while (opos + 1 < olen && ipos + kMatchMaxLen < ilen) {
+    while (opos + 1 < olen && ipos < ilen) {
         int match_idx;
         int match_len;
 
@@ -101,13 +101,6 @@ int ZlingRolzEncoder::Encode(unsigned char* ibuf, uint16_t* obuf, int ilen, int 
             obuf[opos++] = ibuf[ipos];  // encode as literal
             ipos += 1;
         }
-    }
-
-    // rest byte
-    while (opos < olen && ipos < ilen) {
-        obuf[opos++] = ibuf[ipos];
-        MatchAndUpdate(ibuf, ipos, NULL, NULL, 0);
-        ipos += 1;
     }
     encpos[0] = ipos;
     return opos;
@@ -221,7 +214,7 @@ int ZlingRolzDecoder::Decode(uint16_t* ibuf, unsigned char* obuf, int ilen, int 
     while (ipos < ilen) {
         if (ibuf[ipos] < 256) {  // process a literal byte
             obuf[opos] = ibuf[ipos++];
-            GetMatchAndUpdate(obuf, opos, match_idx);
+            GetMatchAndUpdate(obuf, opos, 0);
             opos++;
 
         } else {  // process a match
