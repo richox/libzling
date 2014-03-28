@@ -10,7 +10,6 @@ matchidx_code = []
 matchidx_bits = []
 matchidx_base = []
 
-#for i in range(0, kBucketItemSize):
 while matchidx_code.__len__() < kBucketItemSize:
     matchidx_base.append(matchidx_code.__len__())
 
