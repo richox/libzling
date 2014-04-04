@@ -12,9 +12,9 @@ Simple benchmark with **enwik8**(100,000,000 bytes), also on [Large Text Compres
 
 Tool    | Compressed Size | Encode | Decode |
 --------|-----------------|--------|--------|
-zling d0| 33391KB         | 2.54s  | 1.13s  |
+zling e0| 33391KB         | 2.54s  | 1.13s  |
 zling e1| 32614KB         | 2.90s  | 1.10s  |
-zling d2| 31732KB         | 3.39s  | 1.08s  |
+zling e2| 31732KB         | 3.39s  | 1.08s  |
 zling e3| 31310KB         | 3.95s  | 1.05s  |
 zling e4| 30862KB         | 6.02s  | 1.03s  |
 gzip    | 36520KB         | 8.13s  | 1.47s  |
