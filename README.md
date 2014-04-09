@@ -6,17 +6,17 @@ libzling
 Introduction
 ============
 
-Libzling is an improved lightweight compression utility and library. libzling uses fast order-1 ROLZ (16MB block size and 10MB dictionary size) followed with Huffman encoding, making it **twice as fast as gzip on compressing, while still getting better compression ratio and decompression speed**.
+Libzling is an improved lightweight compression utility and library. libzling uses fast order-1 ROLZ (16MB block size and 10MB dictionary size) followed with Huffman encoding, making it **3 times as fast as gzip on compressing, while still getting much better compression ratio and decompression speed**.
 
 Simple benchmark with **enwik8**(100,000,000 bytes), also on [Large Text Compression Benchmark (thanks to Matt Mahoney)](http://mattmahoney.net/dc/text.html#2702)
 
 Tool    | Compressed Size | Encode | Decode |
 --------|-----------------|--------|--------|
-zling e0| 33391KB         | 2.54s  | 1.13s  |
-zling e1| 32614KB         | 2.90s  | 1.10s  |
-zling e2| 31732KB         | 3.39s  | 1.08s  |
-zling e3| 31310KB         | 3.95s  | 1.05s  |
-zling e4| 30862KB         | 6.02s  | 1.03s  |
+zling e0| 33391KB         | 2.37s  | 1.05s  |
+zling e1| 32614KB         | 2.73s  | 1.03s  |
+zling e2| 31732KB         | 3.14s  | 1.00s  |
+zling e3| 31310KB         | 3.75s  | 0.99s  |
+zling e4| 30862KB         | 5.63s  | 0.98s  |
 gzip    | 36520KB         | 8.13s  | 1.47s  |
 
 Simple benchmark with **fp.log**(20,617,071 bytes)
