@@ -43,7 +43,6 @@ namespace lz {
 
 static const int kBucketItemSize = 4096;
 static const int kBucketItemHash = 8192;
-static const int kMatchDiscardMinLen = 3072;
 static const int kMatchMinLenEnableLazy = 128;
 static const int kMatchMinLen = 4;
 static const int kMatchMaxLen = 259;
@@ -52,12 +51,13 @@ static const struct {
     int m_match_depth;
     int m_lazymatch1_depth;
     int m_lazymatch2_depth;
+
 } kPredefinedConfigs[] = {
-    {2,  0, 0},
-    {4,  0, 0},
-    {6,  1, 0},
-    {8,  2, 1},
-    {32, 8, 4},
+    {2,  1, 0},
+    {4,  1, 0},
+    {6,  2, 0},
+    {8,  3, 1},
+    {16, 4, 2},
 };
 
 class ZlingRolzEncoder {

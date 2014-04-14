@@ -83,8 +83,13 @@ int ZlingRolzEncoder::Encode(unsigned char* ibuf, uint16_t* obuf, int ilen, int 
     int ipos = encpos[0];
     int opos = 0;
 
+    uint32_t lzptable[256] = {0};
+
     // first byte
     if (ipos == 0 && opos < olen && ipos < ilen) {
+        obuf[opos++] = ibuf[ipos++];
+    }
+    if (ipos == 1 && opos < olen && ipos < ilen) {
         obuf[opos++] = ibuf[ipos++];
     }
 
@@ -93,13 +98,22 @@ int ZlingRolzEncoder::Encode(unsigned char* ibuf, uint16_t* obuf, int ilen, int 
         int match_len;
 
         if (MatchAndUpdate(ibuf, ipos, &match_idx, &match_len, m_match_depth)) {
-            obuf[opos++] = 256 + match_len - kMatchMinLen;  // encode as match
+            obuf[opos++] = 258 + match_len - kMatchMinLen;  // encode as match
             obuf[opos++] = match_idx;
             ipos += match_len;
 
+        } else if (ipos + 1 < ilen && (lzptable[ibuf[ipos - 1]] & 0xffff) == (ibuf[ipos] << 8 | ibuf[ipos + 1])) {
+            obuf[opos++] = 256;
+            ipos += 2;
+
+        } else if (ipos + 1 < ilen && (lzptable[ibuf[ipos - 1]] >> 16) == (ibuf[ipos] << 8 | ibuf[ipos + 1])) {
+            obuf[opos++] = 257;
+            ipos += 2;
+            lzptable[ibuf[ipos - 3]] = lzptable[ibuf[ipos - 3]] << 16 | lzptable[ibuf[ipos - 3]] >> 16;
+
         } else {
-            obuf[opos++] = ibuf[ipos];  // encode as literal
-            ipos += 1;
+            obuf[opos++] = ibuf[ipos++];  // encode as literal
+            lzptable[ibuf[ipos - 3]] = lzptable[ibuf[ipos - 3]] << 16 | ibuf[ipos - 2] << 8 | ibuf[ipos - 1];
         }
     }
     encpos[0] = ipos;
@@ -164,7 +178,7 @@ int inline ZlingRolzEncoder::MatchAndUpdate(unsigned char* buf, int pos, int* ma
         }
     }
 
-    if (maxlen >= kMatchMinLen + (maxidx >= kMatchDiscardMinLen)) {
+    if (maxlen >= kMatchMinLen) {
         if (maxlen < kMatchMinLenEnableLazy) {  // fast and stupid lazy parsing
             if (m_lazymatch1_depth > 0 && MatchLazy(buf, pos + 1, maxlen, m_lazymatch1_depth)) {
                 return 0;
@@ -205,8 +219,13 @@ int ZlingRolzDecoder::Decode(uint16_t* ibuf, unsigned char* obuf, int ilen, int 
     int match_len;
     int match_offset;
 
+    uint32_t lzptable[256] = {0};
+
     // first byte
     if (opos == 0 && ipos < ilen) {
+        obuf[opos++] = ibuf[ipos++];
+    }
+    if (opos == 1 && ipos < ilen) {
         obuf[opos++] = ibuf[ipos++];
     }
 
@@ -214,11 +233,24 @@ int ZlingRolzDecoder::Decode(uint16_t* ibuf, unsigned char* obuf, int ilen, int 
     while (ipos < ilen) {
         if (ibuf[ipos] < 256) {  // process a literal byte
             obuf[opos] = ibuf[ipos++];
-            GetMatchAndUpdate(obuf, opos, 0);
-            opos++;
+            GetMatchAndUpdate(obuf, opos++, 0);
+            lzptable[obuf[opos - 3]] = lzptable[obuf[opos - 3]] << 16 | obuf[opos - 2] << 8 | obuf[opos - 1];
+
+        } else if (ibuf[ipos] == 256) {
+            uint16_t lzpword = (lzptable[obuf[opos - 1]] & 0xffff);
+            ipos++;
+            obuf[opos] = (lzpword >> 8) & 0xff; GetMatchAndUpdate(obuf, opos++, 0);
+            obuf[opos] = (lzpword >> 0) & 0xff; opos++;
+
+        } else if (ibuf[ipos] == 257) {
+            uint16_t lzpword = (lzptable[obuf[opos - 1]] >> 16);
+            ipos++;
+            obuf[opos] = (lzpword >> 8) & 0xff; GetMatchAndUpdate(obuf, opos++, 0);
+            obuf[opos] = (lzpword >> 0) & 0xff; opos++;
+            lzptable[obuf[opos - 3]] = lzptable[obuf[opos - 3]] << 16 | lzptable[obuf[opos - 3]] >> 16;
 
         } else {  // process a match
-            match_len = ibuf[ipos++] - 256 + kMatchMinLen;
+            match_len = ibuf[ipos++] - 258 + kMatchMinLen;
             match_idx = ibuf[ipos++];
             match_offset = GetMatchAndUpdate(obuf, opos, match_idx);
 

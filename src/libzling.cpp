@@ -59,7 +59,7 @@ static const uint32_t matchidx_base[] = {
 #   include "ztable_matchidx_base.inc"  /* include auto-generated constant tables */
 };
 
-static const int kHuffmanCodes1      = 256 + (kMatchMaxLen - kMatchMinLen + 1);
+static const int kHuffmanCodes1      = 258 + (kMatchMaxLen - kMatchMinLen + 1);
 static const int kHuffmanCodes2      = sizeof(matchidx_base) / sizeof(matchidx_base[0]);
 static const int kHuffmanMaxLen1     = 15;
 static const int kHuffmanMaxLen2     = 8;
@@ -175,14 +175,14 @@ int Encode(Inputter* inputter, Outputter* outputter, ActionHandler* action_handl
             int opos = 0;
             uint32_t freq_table1[kHuffmanCodes1] = {0};
             uint32_t freq_table2[kHuffmanCodes2] = {0};
-            uint32_t length_table1[kHuffmanCodes1];
-            uint32_t length_table2[kHuffmanCodes2];
+            uint32_t length_table1[kHuffmanCodes1 + (kHuffmanCodes1 % 2)] = {0};
+            uint32_t length_table2[kHuffmanCodes2 + (kHuffmanCodes2 % 2)] = {0};
             uint16_t encode_table1[kHuffmanCodes1];
             uint16_t encode_table2[kHuffmanCodes2];
 
             for (int i = 0; i < rlen; i++) {
                 freq_table1[res.tbuf[i]] += 1;
-                if (res.tbuf[i] >= 256) {
+                if (res.tbuf[i] >= 258) {
                     freq_table2[matchidx_code[res.tbuf[++i]]] += 1;
                 }
             }
@@ -194,20 +194,16 @@ int Encode(Inputter* inputter, Outputter* outputter, ActionHandler* action_handl
 
             // write length table
             for (int i = 0; i < kHuffmanCodes1; i += 2) {
-                res.obuf[opos++] = (i + 1 >= kHuffmanCodes1) ?
-                    length_table1[i] * 16 :
-                    length_table1[i] * 16 + length_table1[i + 1];
+                res.obuf[opos++] = length_table1[i] * 16 + length_table1[i + 1];
             }
             for (int i = 0; i < kHuffmanCodes2; i += 2) {
-                res.obuf[opos++] = (i + 1 >= kHuffmanCodes2) ?
-                    length_table2[i] * 16 :
-                    length_table2[i] * 16 + length_table2[i + 1];
+                res.obuf[opos++] = length_table2[i] * 16 + length_table2[i + 1];
             }
 
             // encode
             for (int i = 0; i < rlen; i++) {
                 codebuf.Input(encode_table1[res.tbuf[i]], length_table1[res.tbuf[i]]);
-                if (res.tbuf[i] >= 256) {
+                if (res.tbuf[i] >= 258) {
                     uint32_t code = matchidx_code[res.tbuf[++i]];
 
                     codebuf.Input(
@@ -302,8 +298,8 @@ int Decode(Inputter* inputter, Outputter* outputter, ActionHandler* action_handl
             // ============================================================
             ZlingCodebuf codebuf;
             int opos = 0;
-            uint32_t length_table1[kHuffmanCodes1] = {0};
-            uint32_t length_table2[kHuffmanCodes2] = {0};
+            uint32_t length_table1[kHuffmanCodes1 + (kHuffmanCodes1 % 2)] = {0};
+            uint32_t length_table2[kHuffmanCodes2 + (kHuffmanCodes2 % 2)] = {0};
             uint16_t decode_table1[1 << kHuffmanMaxLen1];
             uint16_t decode_table2[1 << kHuffmanMaxLen2];
             uint16_t decode_table1_fast[1 << kHuffmanMaxLen1Fast];
@@ -312,20 +308,15 @@ int Decode(Inputter* inputter, Outputter* outputter, ActionHandler* action_handl
 
             // read length table
             for (int i = 0; i < kHuffmanCodes1; i += 2) {
-                length_table1[i] = res.obuf[opos] / 16;
-                i + 1 < kHuffmanCodes1 && (length_table1[i + 1] = res.obuf[opos] % 16);
+                length_table1[i + 0] = res.obuf[opos] / 16;
+                length_table1[i + 1] = res.obuf[opos] % 16;
                 opos++;
             }
             for (int i = 0; i < kHuffmanCodes2; i += 2) {
-                length_table2[i] = res.obuf[opos] / 16;
-                i + 1 < kHuffmanCodes2 && (length_table2[i + 1] = res.obuf[opos] % 16);
+                length_table2[i + 0] = res.obuf[opos] / 16;
+                length_table2[i + 1] = res.obuf[opos] % 16;
                 opos++;
             }
-            if (opos % 4 != 0) opos++;  // keep aligned
-            if (opos % 4 != 0) opos++;  // keep aligned
-            if (opos % 4 != 0) opos++;  // keep aligned
-            if (opos % 4 != 0) opos++;  // keep aligned
-
             ZlingMakeEncodeTable(length_table1, encode_table1, kHuffmanCodes1, kHuffmanMaxLen1);
             ZlingMakeEncodeTable(length_table2, encode_table2, kHuffmanCodes2, kHuffmanMaxLen2);
 
@@ -372,7 +363,7 @@ int Decode(Inputter* inputter, Outputter* outputter, ActionHandler* action_handl
                 }
                 codebuf.Output(length_table1[res.tbuf[i]]);
 
-                if (res.tbuf[i] >= 256) {
+                if (res.tbuf[i] >= 258) {
                     uint32_t code;
                     uint32_t bitlen;
                     uint32_t bits;
