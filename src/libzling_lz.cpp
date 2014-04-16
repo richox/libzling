@@ -101,6 +101,7 @@ int ZlingRolzEncoder::Encode(unsigned char* ibuf, uint16_t* obuf, int ilen, int 
             obuf[opos++] = 258 + match_len - kMatchMinLen;  // encode as match
             obuf[opos++] = match_idx;
             ipos += match_len;
+            lzptable[ibuf[ipos - 3]] = lzptable[ibuf[ipos - 3]] << 16 | ibuf[ipos - 2] << 8 | ibuf[ipos - 1];
 
         } else if (ipos + 1 < ilen && (lzptable[ibuf[ipos - 1]] & 0xffff) == (ibuf[ipos] << 8 | ibuf[ipos + 1])) {
             obuf[opos++] = 256;
@@ -256,6 +257,7 @@ int ZlingRolzDecoder::Decode(uint16_t* ibuf, unsigned char* obuf, int ilen, int 
 
             IncrementalCopyFastPath(&obuf[match_offset], &obuf[opos], match_len);
             opos += match_len;
+            lzptable[obuf[opos - 3]] = lzptable[obuf[opos - 3]] << 16 | obuf[opos - 2] << 8 | obuf[opos - 1];
         }
 
         if (opos > encpos) {
