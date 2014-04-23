@@ -97,7 +97,7 @@ int ZlingRolzEncoder::Encode(unsigned char* ibuf, uint16_t* obuf, int ilen, int 
         int match_idx;
         int match_len;
 
-        if (MatchAndUpdate(ibuf, ipos, &match_idx, &match_len, m_match_depth)) {
+        if (MatchAndUpdate(ibuf, ipos, &match_idx, &match_len, m_match_depth) && ipos + match_len < ilen) {
             obuf[opos++] = 258 + match_len - kMatchMinLen;  // encode as match
             obuf[opos++] = match_idx;
             ipos += match_len;
