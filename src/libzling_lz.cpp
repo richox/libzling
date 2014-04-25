@@ -57,24 +57,35 @@ static inline int GetCommonLength(unsigned char* buf1, unsigned char* buf2, int 
     unsigned char* p1 = buf1;
     unsigned char* p2 = buf2;
 
-    while ((maxlen--) > 0 && *p1 == *p2) {
-        p1++;
-        p2++;
+    while (maxlen >= 4  && *reinterpret_cast<uint32_t*>(p1) == *reinterpret_cast<uint32_t*>(p2)) {
+        p1 += 4;
+        p2 += 4;
+        maxlen -= 4;
+    }
+    if (maxlen >= 2 && *reinterpret_cast<uint16_t*>(p1) == *reinterpret_cast<uint16_t*>(p2)) {
+        p1 += 2;
+        p2 += 2;
+        maxlen -= 2;
+    }
+    if (maxlen >= 1 && *reinterpret_cast<uint8_t*>(p1) == *reinterpret_cast<uint8_t*>(p2)) {
+        p1 += 1;
+        p2 += 1;
+        maxlen -= 1;
     }
     return p1 - buf1;
 }
 
 static inline void IncrementalCopyFastPath(unsigned char* src, unsigned char* dst, int len) {
-    while (dst - src < 8) {
-        *reinterpret_cast<uint64_t*>(dst) = *reinterpret_cast<uint64_t*>(src);
+    while (dst - src < 4) {
+        *reinterpret_cast<uint32_t*>(dst) = *reinterpret_cast<uint32_t*>(src);
         len -= dst - src;
         dst += dst - src;
     }
     while (len > 0) {
-        *reinterpret_cast<uint64_t*>(dst) = *reinterpret_cast<uint64_t*>(src);
-        len -= 8;
-        dst += 8;
-        src += 8;
+        *reinterpret_cast<uint32_t*>(dst) = *reinterpret_cast<uint32_t*>(src);
+        len -= 4;
+        dst += 4;
+        src += 4;
     }
     return;
 }
