@@ -97,25 +97,37 @@ int ZlingRolzEncoder::Encode(unsigned char* ibuf, uint16_t* obuf, int ilen, int 
         int match_idx;
         int match_len;
 
+        // encode as match
         if (MatchAndUpdate(ibuf, ipos, &match_idx, &match_len, m_match_depth) && ipos + match_len < ilen) {
-            obuf[opos++] = 258 + match_len - kMatchMinLen;  // encode as match
+            obuf[opos++] = 258 + match_len - kMatchMinLen;
             obuf[opos++] = match_idx;
             ipos += match_len;
             lzptable[ibuf[ipos - 3]] = lzptable[ibuf[ipos - 3]] << 16 | ibuf[ipos - 2] << 8 | ibuf[ipos - 1];
-
-        } else if (ipos + 1 < ilen && (lzptable[ibuf[ipos - 1]] & 0xffff) == (ibuf[ipos] << 8 | ibuf[ipos + 1])) {
-            obuf[opos++] = 256;
-            ipos += 2;
-
-        } else if (ipos + 1 < ilen && (lzptable[ibuf[ipos - 1]] >> 16) == (ibuf[ipos] << 8 | ibuf[ipos + 1])) {
-            obuf[opos++] = 257;
-            ipos += 2;
-            lzptable[ibuf[ipos - 3]] = lzptable[ibuf[ipos - 3]] << 16 | lzptable[ibuf[ipos - 3]] >> 16;
-
-        } else {
-            obuf[opos++] = ibuf[ipos++];  // encode as literal
-            lzptable[ibuf[ipos - 3]] = lzptable[ibuf[ipos - 3]] << 16 | ibuf[ipos - 2] << 8 | ibuf[ipos - 1];
+            continue;
         }
+
+        // encode as word
+        if (ipos + 1 < ilen) {
+            uint32_t mask_check = lzptable[ibuf[ipos - 1]] ^ (
+                ibuf[ipos] << 8  | ibuf[ipos + 1] << 0 |
+                ibuf[ipos] << 24 | ibuf[ipos + 1] << 16);
+
+            if ((mask_check & 0x0000ffff) == 0) {
+                obuf[opos++] = 256;
+                ipos += 2;
+                continue;
+            }
+            if ((mask_check & 0xffff0000) == 0) {
+                obuf[opos++] = 257;
+                ipos += 2;
+                lzptable[ibuf[ipos - 3]] = lzptable[ibuf[ipos - 3]] << 16 | lzptable[ibuf[ipos - 3]] >> 16;
+                continue;
+            }
+        }
+
+        // encode as literal
+        obuf[opos++] = ibuf[ipos++];
+        lzptable[ibuf[ipos - 3]] = lzptable[ibuf[ipos - 3]] << 16 | ibuf[ipos - 2] << 8 | ibuf[ipos - 1];
     }
     encpos[0] = ipos;
     return opos;
