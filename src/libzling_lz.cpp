@@ -107,22 +107,20 @@ int ZlingRolzEncoder::Encode(unsigned char* ibuf, uint16_t* obuf, int ilen, int 
         }
 
         // encode as word
-        if (ipos + 1 < ilen) {
-            uint32_t mask_check = lzptable[ibuf[ipos - 1]] ^ (
-                ibuf[ipos] << 8  | ibuf[ipos + 1] << 0 |
-                ibuf[ipos] << 24 | ibuf[ipos + 1] << 16);
+        uint32_t mask_check = lzptable[ibuf[ipos - 1]] ^ (
+            ibuf[ipos] << 8  | ibuf[ipos + 1] << 0 |
+            ibuf[ipos] << 24 | ibuf[ipos + 1] << 16);
 
-            if ((mask_check & 0x0000ffff) == 0) {
-                obuf[opos++] = 256;
-                ipos += 2;
-                continue;
-            }
-            if ((mask_check & 0xffff0000) == 0) {
-                obuf[opos++] = 257;
-                ipos += 2;
-                lzptable[ibuf[ipos - 3]] = lzptable[ibuf[ipos - 3]] << 16 | lzptable[ibuf[ipos - 3]] >> 16;
-                continue;
-            }
+        if ((mask_check & 0x0000ffff) == 0) {
+            obuf[opos++] = 256;
+            ipos += 2;
+            continue;
+        }
+        if ((mask_check & 0xffff0000) == 0) {
+            obuf[opos++] = 257;
+            ipos += 2;
+            lzptable[ibuf[ipos - 3]] = lzptable[ibuf[ipos - 3]] << 16 | lzptable[ibuf[ipos - 3]] >> 16;
+            continue;
         }
 
         // encode as literal
