@@ -23,12 +23,12 @@ Simple benchmark with **fp.log**(20,617,071 bytes)
 
 Tool  | Compressed Size | Encode | Decode |
 ------|-----------------|--------|--------|
-zling | 975KB           | 0.12s  | 0.07s  |
-zling | 918KB           | 0.12s  | 0.07s  |
-zling | 909KB           | 0.14s  | 0.07s  |
-zling | 922KB           | 0.17s  | 0.07s  |
-zling | 909KB           | 0.22s  | 0.07s  |
-gzip  | 1449KB          | 0.41s  | 0.14s  |
+zling e0| 975KB           | 0.12s  | 0.07s  |
+zling e1| 918KB           | 0.12s  | 0.07s  |
+zling e2| 909KB           | 0.14s  | 0.07s  |
+zling e3| 922KB           | 0.17s  | 0.07s  |
+zling e4| 909KB           | 0.22s  | 0.07s  |
+gzip    | 1449KB          | 0.41s  | 0.14s  |
 
 Build & Install
 ===============
