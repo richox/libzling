@@ -12,22 +12,22 @@ Simple benchmark with **enwik8**(100,000,000 bytes), also on [Large Text Compres
 
 Tool    | Compressed Size | Encode | Decode |
 --------|-----------------|--------|--------|
-zling e0| 32456KB         | 2.57s  | 1.03s  |
-zling e1| 31800KB         | 2.95s  | 1.02s  |
-zling e2| 31420KB         | 3.36s  | 1.00s  |
-zling e3| 31064KB         | 3.95s  | 0.99s  |
-zling e4| 30782KB         | 4.58s  | 0.98s  |
+zling e0| 32378KB         | 2.42s  | 1.03s  |
+zling e1| 31720KB         | 2.73s  | 1.02s  |
+zling e2| 31341KB         | 3.14s  | 1.00s  |
+zling e3| 30980KB         | 3.73s  | 0.99s  |
+zling e4| 30707KB         | 4.36s  | 0.98s  |
 gzip    | 36520KB         | 8.13s  | 1.47s  |
 
 Simple benchmark with **fp.log**(20,617,071 bytes)
 
 Tool  | Compressed Size | Encode | Decode |
 ------|-----------------|--------|--------|
-zling e0| 975KB           | 0.12s  | 0.07s  |
-zling e1| 918KB           | 0.12s  | 0.07s  |
-zling e2| 909KB           | 0.14s  | 0.07s  |
-zling e3| 922KB           | 0.17s  | 0.07s  |
-zling e4| 909KB           | 0.22s  | 0.07s  |
+zling e0| 973KB           | 0.10s  | 0.07s  |
+zling e1| 914KB           | 0.11s  | 0.07s  |
+zling e2| 903KB           | 0.12s  | 0.07s  |
+zling e3| 914KB           | 0.15s  | 0.07s  |
+zling e4| 901KB           | 0.19s  | 0.07s  |
 gzip    | 1449KB          | 0.41s  | 0.14s  |
 
 Build & Install
@@ -51,13 +51,14 @@ Libling provides simple and lightweight interface. here is a simple program show
 int main() {
     // compress
     {
+        const int level = 0;  // valid levels: 0, 1, 2, 3, 4
         FILE* fin = fopen("./1.txt", "rb");
         FILE* fout = fopen("./1.txt.zlng", "wb");
 
         baidu::zling::FileInputter  inputter(fin);
         baidu::zling::FileOutputter outputter(fout);
 
-        baidu::zling::Encode(&inputter, &outputter);
+        baidu::zling::Encode(&inputter, &outputter, level);
         fclose(fin);
         fclose(fout);
     }
