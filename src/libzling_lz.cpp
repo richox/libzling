@@ -156,11 +156,8 @@ int inline ZlingRolzEncoder::MatchAndUpdate(unsigned char* buf, int pos, int* ma
     uint8_t  hash_check   = hash / kBucketItemHash % 256;
     uint32_t hash_context = hash % kBucketItemHash;
 
-    int node;
-    int i;
     ZlingEncodeBucket* bucket = &m_buckets[buf[pos - 1]];
-
-    node = bucket->hash[hash_context];
+    int node = bucket->hash[hash_context];
 
     // update befault matching (to make it faster)
     bucket->head = RollingAdd(bucket->head, 1);
@@ -179,7 +176,7 @@ int inline ZlingRolzEncoder::MatchAndUpdate(unsigned char* buf, int pos, int* ma
     }
 
     // start matching
-    for (i = 0; i < match_depth; i++) {
+    for (int i = 0; i < match_depth; i++) {
         uint32_t offset = bucket->offset[node] & 0xffffff;
         uint8_t  check = bucket->offset[node] >> 24;
 
@@ -220,15 +217,16 @@ int inline ZlingRolzEncoder::MatchAndUpdate(unsigned char* buf, int pos, int* ma
 
 int inline ZlingRolzEncoder::MatchLazy(unsigned char* buf, int pos, int maxlen, int depth) {
     ZlingEncodeBucket* bucket = &m_buckets[buf[pos - 1]];
-    int node = bucket->hash[HashContext(buf + pos) % kBucketItemHash];
+    uint32_t hash = HashContext(buf + pos);
+    uint32_t hash_context = hash % kBucketItemHash;
 
-    uint32_t fetch_current = *reinterpret_cast<uint32_t*>(buf + pos + maxlen - 3);
-    uint32_t fetch_match;
+    int node = bucket->hash[hash_context];
+    maxlen -= 3;
 
     for (int i = 0; i < depth; i++) {
-        fetch_match = *reinterpret_cast<uint32_t*>(buf + (bucket->offset[node] & 0xffffff) + maxlen - 3);
+        uint32_t offset = bucket->offset[node] & 0xffffff;
 
-        if (fetch_current == fetch_match) {
+        if (*reinterpret_cast<uint32_t*>(buf + pos + maxlen) == *reinterpret_cast<uint32_t*>(buf + offset + maxlen)) {
             return 1;
         }
         node = bucket->suffix[node];
