@@ -38,7 +38,6 @@ namespace baidu {
 namespace zling {
 namespace lz {
 
-static inline uint32_t HashContext(unsigned char* ptr) __attribute__((pure));
 static inline uint32_t RollingAdd(uint32_t x, uint32_t y) __attribute__((pure));
 static inline uint32_t RollingSub(uint32_t x, uint32_t y) __attribute__((pure));
 
