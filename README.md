@@ -31,6 +31,7 @@ zling e3| 914KB           | 0.15s  | 0.07s  |
 zling e4| 901KB           | 0.19s  | 0.07s  |
 
 Libzling is very suitable for compressing bigdata. here is a benchmark for `jx-se-click0-0.jx.baidu.com_20140601000000.log` (60,908,643 bytes), which is a sequence file containing web logging data like (unvisible characters are removed):
+
     182.202.13.193 01/Jun/2014:00:00:00 +0800 GET /w.gif?q=%D5%BE%C7%B0%B5%BD%B4%F3%CE%F7%BD%D6&fm=se&T=1401551999&y=776FFE5A&rsv_cache=0&rsv_sid=2889&cid=0&qid=deecd1b40006525b&t=1401552000884&rsv_mobile=1_0_2_0_0&path=http://www.baidu.com/s?ie=utf-8&bs=%E5%85%88%E5%A4%A9%E4%B8%8D%E8%B6%B3%E5%90%8E%E5%A4%A9%E5%BE%97%E8%A1%A5&dsp=ipad&f=8&rsv_bp=1&wd=%E7%AB%99%E5%89%8D%E5%88%B0%E5%A4%A7%E8%A5%BF%E8%A1%97&rsv_sugtime=1212&inputT=22595&rsv_sug3=32 HTTP/1.1 ? _ga=GA1.2.635472944.1400156199; BAIDU_WISE_UID=wapp_1391443584896_450; BAIDUID=6477DD622450D4E300E5BD0B0E9C1887:FG=1; H_PS_PSSID=2889; Hm_lvt_f4165db5a1ac36eadcfa02a10a6bd243=1394801121; USER_AGENT=Mozilla/5.0 (iPad; CPU OS 7_1_1 like Mac OS X) AppleWebKit/537.51.2 (KHTML, like Gecko) Version/7.0 Mobile/11D201 Safari/9537.5
 
 Tool    | Compressed Size | Encode | Decode |
