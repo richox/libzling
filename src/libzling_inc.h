@@ -33,7 +33,7 @@
  * @brief  include headers.
  */
 #ifndef SRC_LIBZLING_INC_H
-#define SRC_INC_H
+#define SRC_LIBZLING_INC_H
 
 #include <algorithm>
 #include <cstdio>
