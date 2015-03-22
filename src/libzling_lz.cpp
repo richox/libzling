@@ -84,12 +84,7 @@ static inline void IncrementalCopyFastPath(unsigned char* src, unsigned char* ds
         len -= dst - src;
         dst += dst - src;
     }
-    while (len > 0) {
-        *reinterpret_cast<volatile uint32_t*>(dst) = *reinterpret_cast<volatile uint32_t*>(src);
-        len -= 4;
-        dst += 4;
-        src += 4;
-    }
+    memmove(dst, src, len);
     return;
 }
 
