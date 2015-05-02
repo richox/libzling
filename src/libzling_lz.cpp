@@ -57,20 +57,20 @@ static inline int GetCommonLength(unsigned char* buf1, unsigned char* buf2, int 
     unsigned char* p1 = buf1;
     unsigned char* p2 = buf2;
 
-    if (*reinterpret_cast<uint32_t*>(p1) != *reinterpret_cast<uint32_t*>(p2)) {
+    if (*reinterpret_cast<volatile uint32_t*>(p1) != *reinterpret_cast<volatile uint32_t*>(p2)) {
         return 0;
     }
-    while (maxlen >= 4 && *reinterpret_cast<uint32_t*>(p1) == *reinterpret_cast<uint32_t*>(p2)) {
+    while (maxlen >= 4 && *reinterpret_cast<volatile uint32_t*>(p1) == *reinterpret_cast<volatile uint32_t*>(p2)) {
         p1 += 4;
         p2 += 4;
         maxlen -= 4;
     }
-    if (maxlen >= 2 && *reinterpret_cast<uint16_t*>(p1) == *reinterpret_cast<uint16_t*>(p2)) {
+    if (maxlen >= 2 && *reinterpret_cast<volatile uint16_t*>(p1) == *reinterpret_cast<volatile uint16_t*>(p2)) {
         p1 += 2;
         p2 += 2;
         maxlen -= 2;
     }
-    if (maxlen >= 1 && *reinterpret_cast<uint8_t*>(p1) == *reinterpret_cast<uint8_t*>(p2)) {
+    if (maxlen >= 1 && *reinterpret_cast<volatile uint8_t*>(p1) == *reinterpret_cast<volatile uint8_t*>(p2)) {
         p1 += 1;
         p2 += 1;
         maxlen -= 1;
