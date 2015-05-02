@@ -33,6 +33,7 @@
  * @brief  manipulate ROLZ (reduced offset Lempel-Ziv) compression.
  */
 #include "libzling_lz.h"
+#include <iostream>
 
 namespace baidu {
 namespace zling {
@@ -79,12 +80,12 @@ static inline int GetCommonLength(unsigned char* buf1, unsigned char* buf2, int 
 
 static inline void IncrementalCopyFastPath(unsigned char* src, unsigned char* dst, int len) {
     while (dst - src < 4) {
-        *reinterpret_cast<uint32_t*>(dst) = *reinterpret_cast<uint32_t*>(src);
+        *reinterpret_cast<volatile uint32_t*>(dst) = *reinterpret_cast<volatile uint32_t*>(src);
         len -= dst - src;
         dst += dst - src;
     }
     while (len > 0) {
-        *reinterpret_cast<uint32_t*>(dst) = *reinterpret_cast<uint32_t*>(src);
+        *reinterpret_cast<volatile uint32_t*>(dst) = *reinterpret_cast<volatile uint32_t*>(src);
         len -= 4;
         dst += 4;
         src += 4;
