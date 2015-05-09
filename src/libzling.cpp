@@ -70,6 +70,39 @@ static const int kBlockSizeIn      = 16777216;
 static const int kBlockSizeRolz    = 262144;
 static const int kBlockSizeHuffman = 393216;
 
+/* codebuf: manipulate code (u64) buffer.
+ *  Input();
+ *  Output();
+ *  Peek();
+ *  GetLength();
+ */
+struct ZlingCodebuf {
+    ZlingCodebuf():
+        m_buf(0),
+        m_len(0) {}
+
+    inline void Input(uint64_t code, int len) {
+        m_buf |= code << m_len;
+        m_len += len;
+        return;
+    }
+    inline uint64_t Output(int len) {
+        uint64_t out = Peek(len);
+        m_buf >>= len;
+        m_len  -= len;
+        return out;
+    }
+    inline uint64_t Peek(int len) const {
+        return m_buf & ~(-1ull << len);
+    }
+    inline int GetLength() const {
+        return m_len;
+    }
+private:
+    uint64_t m_buf;
+    int m_len;
+};
+
 /* encode/decode allocation resource: auto free */
 struct EncodeResource {
     ZlingRolzEncoder* lzencoder;
@@ -78,12 +111,13 @@ struct EncodeResource {
     uint16_t* tbuf;
 
     EncodeResource(int level): lzencoder(NULL), ibuf(NULL), obuf(NULL), tbuf(NULL) {
-        ibuf = new(std::nothrow) unsigned char[kBlockSizeIn + kSentinelLen];
-        obuf = new(std::nothrow) unsigned char[kBlockSizeHuffman + kSentinelLen];
-        tbuf = new(std::nothrow) uint16_t[kBlockSizeRolz + kSentinelLen];
-        lzencoder = new(std::nothrow) ZlingRolzEncoder(level);
+        try {
+            ibuf = new unsigned char[kBlockSizeIn + kSentinelLen];
+            obuf = new unsigned char[kBlockSizeHuffman + kSentinelLen];
+            tbuf = new uint16_t[kBlockSizeRolz + kSentinelLen];
+            lzencoder = new ZlingRolzEncoder(level);
 
-        if (!ibuf || !obuf || !tbuf || !lzencoder) {
+        } catch (const std::bad_alloc& e) {
             delete lzencoder;
             delete [] ibuf;
             delete [] obuf;
@@ -105,12 +139,13 @@ struct DecodeResource {
     uint16_t* tbuf;
 
     DecodeResource(): lzdecoder(NULL), ibuf(NULL), obuf(NULL), tbuf(NULL) {
-        ibuf = new(std::nothrow) unsigned char[kBlockSizeIn + kSentinelLen];
-        obuf = new(std::nothrow) unsigned char[kBlockSizeHuffman + kSentinelLen];
-        tbuf = new(std::nothrow) uint16_t[kBlockSizeRolz + kSentinelLen];
-        lzdecoder = new(std::nothrow) ZlingRolzDecoder();
+        try {
+            ibuf = new unsigned char[kBlockSizeIn + kSentinelLen];
+            obuf = new unsigned char[kBlockSizeHuffman + kSentinelLen];
+            tbuf = new uint16_t[kBlockSizeRolz + kSentinelLen];
+            lzdecoder = new ZlingRolzDecoder();
 
-        if (!ibuf || !obuf || !tbuf || !lzdecoder) {
+        } catch (const std::bad_alloc& e) {
             delete lzdecoder;
             delete [] ibuf;
             delete [] obuf;
