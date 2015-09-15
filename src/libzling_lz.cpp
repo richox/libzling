@@ -112,12 +112,14 @@ int ZlingRolzEncoder::Encode(unsigned char* ibuf, uint16_t* obuf, int ilen, int 
         int match_len;
 
         // encode as match
-        if (MatchAndUpdate(ibuf, ipos, &match_idx, &match_len, m_match_depth) && ipos + match_len < ilen) {
-            obuf[opos++] = 258 + match_len - kMatchMinLen;
-            obuf[opos++] = match_idx;
-            ipos += match_len;
-            lzptable[ibuf[ipos - 3]] = lzptable[ibuf[ipos - 3]] << 16 | ibuf[ipos - 2] << 8 | ibuf[ipos - 1];
-            continue;
+        if (ipos + kMatchMaxLen + 16 < ilen) {  // avoid overflow
+            if (MatchAndUpdate(ibuf, ipos, &match_idx, &match_len, m_match_depth)) {
+                obuf[opos++] = 258 + match_len - kMatchMinLen;
+                obuf[opos++] = match_idx;
+                ipos += match_len;
+                lzptable[ibuf[ipos - 3]] = lzptable[ibuf[ipos - 3]] << 16 | ibuf[ipos - 2] << 8 | ibuf[ipos - 1];
+                continue;
+            }
         }
 
         // encode as word
