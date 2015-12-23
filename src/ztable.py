@@ -25,3 +25,8 @@ for i in range(0, matchidx_base.__len__()):
 
 for i in range(0, matchidx_code.__len__()):
     f_code.write("%4u," % matchidx_code[i] + "\n\x20" [int(i % 16 != 15)])
+
+f_mtfnext = open("ztable_mtfnext.inc", "w")
+
+for i in range(0, 256):
+    f_mtfnext.write("%4u," % int(i * 0.9) + "\n\x20" [int(i % 16 != 15)])
