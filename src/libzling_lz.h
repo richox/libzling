@@ -60,12 +60,19 @@ static const struct {
     {16, 4, 2},
 };
 
-class ZlingMTF {
+class ZlingMTFEncoder {
 public:
-    ZlingMTF();
+    ZlingMTFEncoder();
     unsigned char Encode(unsigned char c);
-    unsigned char Decode(unsigned char i);
+private:
+    unsigned char m_table[256];
+    unsigned char m_index[256];
+};
 
+class ZlingMTFDecoder {
+public:
+    ZlingMTFDecoder();
+    unsigned char Decode(unsigned char i);
 private:
     unsigned char m_table[256];
 };
@@ -101,7 +108,7 @@ private:
         uint16_t hash[kBucketItemHash];
     };
     ZlingEncodeBucket m_buckets[256];
-    ZlingMTF m_mtf[256];
+    ZlingMTFEncoder m_mtf[256];
     int m_match_depth;
     int m_lazymatch1_depth;
     int m_lazymatch2_depth;
@@ -136,7 +143,7 @@ private:
         uint16_t head;
     };
     ZlingDecodeBucket m_buckets[256];
-    ZlingMTF m_mtf[256];
+    ZlingMTFDecoder m_mtf[256];
     ZlingRolzDecoder(const ZlingRolzDecoder&);
     ZlingRolzDecoder& operator = (const ZlingRolzDecoder&);
 };

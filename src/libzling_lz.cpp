@@ -102,20 +102,23 @@ static inline void IncrementalCopyFastPath(unsigned char* src, unsigned char* ds
     return;
 }
 
-ZlingMTF::ZlingMTF() {
+ZlingMTFEncoder::ZlingMTFEncoder() {
     memcpy(m_table, mtfinit, sizeof(m_table));
-}
-
-unsigned char ZlingMTF::Encode(unsigned char c) {
-    unsigned char i = 0;
-    while (m_table[i] != c) {
-        i++;
+    for (int i = 0; i < 256; i++) {
+        m_index[m_table[i]] = i;
     }
+}
+unsigned char ZlingMTFEncoder::Encode(unsigned char c) {
+    unsigned char i = m_index[c];
+    std::swap(m_index[c], m_index[m_table[mtfnext[i]]]);
     std::swap(m_table[i], m_table[mtfnext[i]]);
     return i;
 }
 
-unsigned char ZlingMTF::Decode(unsigned char i) {
+ZlingMTFDecoder::ZlingMTFDecoder() {
+    memcpy(m_table, mtfinit, sizeof(m_table));
+}
+unsigned char ZlingMTFDecoder::Decode(unsigned char i) {
     unsigned char c = m_table[i];
     std::swap(m_table[i], m_table[mtfnext[i]]);
     return c;
