@@ -50,13 +50,13 @@ using lz::kMatchMinLen;
 using lz::kBucketItemSize;
 
 static const uint32_t matchidx_bitlen[] = {
-#   include "ztable_matchidx_blen.inc"  /* include auto-generated constant tables */
+#   include "tables/table_matchidx_blen.inc"  /* include auto-generated constant tables */
 };
 static const uint32_t matchidx_code[] = {
-#   include "ztable_matchidx_code.inc"  /* include auto-generated constant tables */
+#   include "tables/table_matchidx_code.inc"  /* include auto-generated constant tables */
 };
 static const uint32_t matchidx_base[] = {
-#   include "ztable_matchidx_base.inc"  /* include auto-generated constant tables */
+#   include "tables/table_matchidx_base.inc"  /* include auto-generated constant tables */
 };
 
 static const int kHuffmanCodes1      = 258 + (kMatchMaxLen - kMatchMinLen + 1);

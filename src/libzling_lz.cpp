@@ -39,8 +39,11 @@ namespace baidu {
 namespace zling {
 namespace lz {
 
+static const unsigned char mtfinit[] = {
+#   include "tables/table_mtfinit.inc"  /* include auto-generated constant tables */
+};
 static const unsigned char mtfnext[] = {
-#   include "ztable_mtfnext.inc"  /* include auto-generated constant tables */
+#   include "tables/table_mtfnext.inc"  /* include auto-generated constant tables */
 };
 
 static inline uint32_t RollingAdd(uint32_t x, uint32_t y) __attribute__((pure));
@@ -98,9 +101,7 @@ static inline void IncrementalCopyFastPath(unsigned char* src, unsigned char* ds
 }
 
 ZlingMTF::ZlingMTF() {
-    for (int i = 0; i < 256; i++) {
-        m_table[i] = i;
-    }
+    memcpy(m_table, mtfinit, sizeof(m_table));
 }
 
 unsigned char ZlingMTF::Encode(unsigned char c) {
