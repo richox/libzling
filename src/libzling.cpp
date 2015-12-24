@@ -192,8 +192,6 @@ int Encode(Inputter* inputter, Outputter* outputter, ActionHandler* action_handl
             ilen += inputter->GetData(res.ibuf + ilen, kBlockSizeIn - ilen);
             CHECK_IO_ERROR(inputter);
         }
-        memset(res.ibuf + ilen, 0, kSentinelLen);
-
         res.lzencoder->Reset();
 
         while (encpos < ilen) {
@@ -323,11 +321,13 @@ int Decode(Inputter* inputter, Outputter* outputter, ActionHandler* action_handl
             rlen   = inputter->GetUInt32(); CHECK_IO_ERROR(inputter);
             olen   = inputter->GetUInt32(); CHECK_IO_ERROR(inputter);
 
+            if (rlen > kBlockSizeRolz || olen > kBlockSizeHuffman) {
+                throw std::runtime_error("baidu::zling::Decode(): invalid block size.");
+            }
             for (int ooff = 0; !inputter->IsEnd() && ooff < olen; ) {
                 ooff += inputter->GetData(res.obuf + ooff, olen - ooff);
                 CHECK_IO_ERROR(inputter);
             }
-            memset(res.obuf + olen, 0, kSentinelLen);
 
             // HUFFMAN DECODE
             // ============================================================
