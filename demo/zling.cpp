@@ -39,7 +39,7 @@
 
 #define __STDC_FORMAT_MACROS
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && _MSC_VER < 1600
 #include "msinttypes/stdint.h"
 #include "msinttypes/inttypes.h"
 

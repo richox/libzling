@@ -46,8 +46,10 @@ static const unsigned char mtfnext[] = {
 #   include "tables/table_mtfnext.inc"  /* include auto-generated constant tables */
 };
 
+#ifdef __GNUC__
 static inline uint32_t RollingAdd(uint32_t x, uint32_t y) __attribute__((pure));
 static inline uint32_t RollingSub(uint32_t x, uint32_t y) __attribute__((pure));
+#endif
 
 static inline uint32_t HashContext(unsigned char* ptr) {
     return (*reinterpret_cast<uint32_t*>(ptr) + ptr[2] * 137 + ptr[3] * 13337);
