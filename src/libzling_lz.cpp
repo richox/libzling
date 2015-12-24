@@ -138,8 +138,10 @@ int ZlingRolzEncoder::Encode(unsigned char* ibuf, uint16_t* obuf, int ilen, int 
                 obuf[opos++] = 258 + match_len - kMatchMinLen;
                 obuf[opos++] = match_idx;
                 ipos += match_len;
-                word_mru[ibuf[ipos - 3]][1] = word_mru[ibuf[ipos - 3]][0];
-                word_mru[ibuf[ipos - 3]][0] = ibuf[ipos - 2] << 8 | ibuf[ipos - 1];
+                if (word_mru[ibuf[ipos - 3]][0] != (ibuf[ipos - 2] << 8 | ibuf[ipos - 1])) {
+                    word_mru[ibuf[ipos - 3]][1] = word_mru[ibuf[ipos - 3]][0];
+                    word_mru[ibuf[ipos - 3]][0] = ibuf[ipos - 2] << 8 | ibuf[ipos - 1];
+                }
                 continue;
             }
         }
@@ -171,7 +173,16 @@ int ZlingRolzEncoder::Encode(unsigned char* ibuf, uint16_t* obuf, int ilen, int 
 }
 
 void ZlingRolzEncoder::Reset() {
-    memset(m_buckets, 0, sizeof(m_buckets));
+    for (int context = 0; context < 256; context++) {
+        for (int i = 0; i < kBucketItemSize; i++) {
+            m_buckets[context].offset[i] = 0;
+            m_buckets[context].suffix[i] = 65535;
+        }
+        for (int i = 0; i < kBucketItemHash; i++) {
+            m_buckets[context].hash[i] = 65535;
+        }
+        m_buckets[context].head = 0;
+    }
     return;
 }
 
@@ -191,13 +202,9 @@ int inline ZlingRolzEncoder::MatchAndUpdate(unsigned char* buf, int pos, int* ma
     bucket->offset[bucket->head] = pos | hash_check << 24;
     bucket->hash[hash_context] = bucket->head;
 
-    // no match for first position (faster)
-    if (node == 0) {
-        return 0;
-    }
-
-    // entry already updated, cannot match
-    if (node == bucket->head) {
+    // no match for first position
+    // no match for currently updating entry
+    if (node == 65535 || node == bucket->head) {
         return 0;
     }
 
@@ -220,7 +227,7 @@ int inline ZlingRolzEncoder::MatchAndUpdate(unsigned char* buf, int pos, int* ma
         node = bucket->suffix[node];
 
         // end chaining?
-        if (!node || offset <= (bucket->offset[node] & 0xffffff)) {
+        if (node == 65535 || offset <= (bucket->offset[node] & 0xffffff)) {
             break;
         }
     }
@@ -302,8 +309,10 @@ int ZlingRolzDecoder::Decode(uint16_t* ibuf, unsigned char* obuf, int ilen, int 
 
             IncrementalCopyFastPath(&obuf[match_offset], &obuf[opos], match_len);
             opos += match_len;
-            word_mru[obuf[opos - 3]][1] = word_mru[obuf[opos - 3]][0];
-            word_mru[obuf[opos - 3]][0] = obuf[opos - 2] << 8 | obuf[opos - 1];
+            if (word_mru[obuf[opos - 3]][0] != (obuf[opos - 2] << 8 | obuf[opos - 1])) {
+                word_mru[obuf[opos - 3]][1] = word_mru[obuf[opos - 3]][0];
+                word_mru[obuf[opos - 3]][0] = obuf[opos - 2] << 8 | obuf[opos - 1];
+            }
         }
 
         if (opos > encpos) {
@@ -319,7 +328,12 @@ int ZlingRolzDecoder::Decode(uint16_t* ibuf, unsigned char* obuf, int ilen, int 
 }
 
 void ZlingRolzDecoder::Reset() {
-    memset(m_buckets, 0, sizeof(m_buckets));
+    for (int context = 0; context < 256; context++) {
+        for (int i = 0; i < kBucketItemSize; i++) {
+            m_buckets[context].offset[i] = 0;
+        }
+        m_buckets[context].head = 0;
+    }
     return;
 }
 
