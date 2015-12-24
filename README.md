@@ -14,11 +14,11 @@ Tool    | Compressed Size | Encode | Decode |
 --------|-----------------|--------|--------|
 xz      | 26377KB         | 82.94s | 2.05s  |
 bzip2   | 29009KB         | 10.81s | 4.58s  |
-e4      | 29790KB         |  4.19s | 0.91s  |
-e3      | 30066KB         |  3.55s | 0.92s  |
-e2      | 30541KB         |  2.98s | 0.92s  |
-e1      | 30919KB         |  2.64s | 0.93s  |
-e0      | 31521KB         |  2.35s | 0.94s  |
+zling e4| 29790KB         |  4.19s | 0.91s  |
+zling e3| 30066KB         |  3.55s | 0.92s  |
+zling e2| 30541KB         |  2.98s | 0.92s  |
+zling e1| 30919KB         |  2.64s | 0.93s  |
+zling e0| 31521KB         |  2.35s | 0.94s  |
 gzip    | 36518KB         |  6.52s | 1.03s  |
 
 Build & Install
