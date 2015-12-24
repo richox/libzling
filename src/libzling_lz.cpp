@@ -103,7 +103,7 @@ ZlingMTF::ZlingMTF() {
     }
 }
 
-unsigned char ZlingMTF::encode(unsigned char c) {
+unsigned char ZlingMTF::Encode(unsigned char c) {
     unsigned char i = 0;
     while (m_table[i] != c) {
         i++;
@@ -112,7 +112,7 @@ unsigned char ZlingMTF::encode(unsigned char c) {
     return i;
 }
 
-unsigned char ZlingMTF::decode(unsigned char i) {
+unsigned char ZlingMTF::Decode(unsigned char i) {
     unsigned char c = m_table[i];
     std::swap(m_table[i], m_table[mtfnext[i]]);
     return c;
@@ -161,7 +161,7 @@ int ZlingRolzEncoder::Encode(unsigned char* ibuf, uint16_t* obuf, int ilen, int 
         }
 
         // encode as literal
-        obuf[opos++] = m_mtf[ibuf[ipos - 1]].encode(ibuf[ipos]);
+        obuf[opos++] = m_mtf[ibuf[ipos - 1]].Encode(ibuf[ipos]);
         ipos++;
         word_mru[ibuf[ipos - 3]][1] = word_mru[ibuf[ipos - 3]][0];
         word_mru[ibuf[ipos - 3]][0] = ibuf[ipos - 2] << 8 | ibuf[ipos - 1];
@@ -275,7 +275,7 @@ int ZlingRolzDecoder::Decode(uint16_t* ibuf, unsigned char* obuf, int ilen, int 
     // rest byte
     while (ipos < ilen) {
         if (ibuf[ipos] < 256) {  // process a literal byte
-            obuf[opos] = m_mtf[obuf[opos - 1]].decode(ibuf[ipos]);
+            obuf[opos] = m_mtf[obuf[opos - 1]].Decode(ibuf[ipos]);
             ipos++;
             GetMatchAndUpdate(obuf, opos++, 0);
             word_mru[obuf[opos - 3]][1] = word_mru[obuf[opos - 3]][0];

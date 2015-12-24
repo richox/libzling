@@ -63,8 +63,8 @@ static const struct {
 class ZlingMTF {
 public:
     ZlingMTF();
-    unsigned char encode(unsigned char c);
-    unsigned char decode(unsigned char i);
+    unsigned char Encode(unsigned char c);
+    unsigned char Decode(unsigned char i);
 
 private:
     unsigned char m_table[256];
