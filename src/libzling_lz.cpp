@@ -260,6 +260,9 @@ int inline ZlingRolzEncoder::MatchLazy(unsigned char* buf, int pos, int maxlen, 
     uint32_t hash_context = hash % kBucketItemHash;
 
     int node = bucket->hash[hash_context];
+    if (node == 65535) {
+        return 0;
+    }
     maxlen -= 3;
 
     for (int i = 0; i < depth; i++) {
