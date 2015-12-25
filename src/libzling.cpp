@@ -400,7 +400,6 @@ int Decode(Inputter* inputter, Outputter* outputter, ActionHandler* action_handl
 
                 if (res.tbuf[i] >= 258) {
                     uint32_t code;
-                    uint32_t bitlen;
                     uint32_t bits;
 
                     /* error: matchidx.code >= kHuffmanCodes2 */
