@@ -194,7 +194,7 @@ void ZlingRolzEncoder::Reset() {
 
 int inline ZlingRolzEncoder::MatchAndUpdate(unsigned char* buf, int pos, int* match_idx, int* match_len, int match_depth) {
     int maxlen = kMatchMinLen - 1;
-    int maxidx = 0;
+    int maxnode = 0;
     uint32_t hash = HashContext(buf + pos);
     uint8_t  hash_check   = hash / kBucketItemHash % 256;
     uint32_t hash_context = hash % kBucketItemHash;
@@ -223,7 +223,7 @@ int inline ZlingRolzEncoder::MatchAndUpdate(unsigned char* buf, int pos, int* ma
             int len = GetCommonLength(buf + pos, buf + offset, kMatchMaxLen);
 
             if (len > maxlen) {
-                maxidx = RollingSub(bucket->head, node);
+                maxnode = node;
                 maxlen = len;
                 if (maxlen == kMatchMaxLen) {
                     break;
@@ -248,7 +248,7 @@ int inline ZlingRolzEncoder::MatchAndUpdate(unsigned char* buf, int pos, int* ma
             }
         }
         match_len[0] = maxlen;
-        match_idx[0] = maxidx;
+        match_idx[0] = RollingSub(bucket->head, maxnode);
         return 1;
     }
     return 0;
