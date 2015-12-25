@@ -12,14 +12,14 @@ Simple benchmark with **enwik8**(100,000,000 bytes), also on [Large Text Compres
 
 Tool    | Compressed Size | Encode | Decode |
 --------|-----------------|--------|--------|
-xz      | 26377KB         | 82.94s | 2.05s  |
-bzip2   | 29009KB         | 10.81s | 4.58s  |
-zling e4| 29790KB         |  4.19s | 0.91s  |
-zling e3| 30066KB         |  3.55s | 0.92s  |
-zling e2| 30541KB         |  2.98s | 0.92s  |
-zling e1| 30919KB         |  2.64s | 0.93s  |
-zling e0| 31521KB         |  2.35s | 0.94s  |
-gzip    | 36518KB         |  6.52s | 1.03s  |
+xz      |26376KB          |83.870s |2.237s  |
+bzip2   |29009KB          |10.733s |4.649s  |
+zling e4|29721KB          |4.150s  |1.016s  |
+zling e3|30000KB          |3.554s  |1.061s  |
+zling e2|30478KB          |2.947s  |1.030s  |
+zling e1|30856KB          |2.634s  |1.034s  |
+zling e0|31456KB          |2.302s  |1.080s  |
+gzip    |36518KB          |6.597s  |1.094s  |
 
 Build & Install
 ===============
