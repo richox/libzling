@@ -11,6 +11,10 @@ fi
 wd="$(cd $(dirname "$0") && pwd)"
 testdata="$1"
 
+echo "CPU: $(cat /proc/cpuinfo | grep -m1 -i name | grep -o -P "(?<=:\s)\w.+$")"
+echo "MEM: $(cat /proc/meminfo | grep -m1 -i memtotal | grep -o -P "\d.+$")"
+echo "OS:  $(uname -sr)"
+
 _ftimer="/tmp/libzling_benchmark_time"
 _fencode="/tmp/libzling_benchmark_test_encode"
 _fdecode="/tmp/libzling_benchmark_test_decode"
@@ -26,8 +30,8 @@ benchmark() {
     local name="$1"
     local enccmd="$2"
     local deccmd="$3"
-    printf "%-13s enc=%s, dec=%s, size=%s, cmp=%s\n" \
-        "[$name]" \
+    printf "%-11s | %s | %s | %s | %s\n" \
+        "$name" \
         "$(timer "$enccmd <'$testdata' >'$_fencode'")" \
         "$(timer "$deccmd <'$_fencode' >'$_fdecode'")" \
         "$(wc -c <"$_fencode")" \

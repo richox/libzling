@@ -10,16 +10,20 @@ Libzling is an improved lightweight compression utility and library. libzling us
 
 Simple benchmark with **enwik8**(100,000,000 bytes), also on [Large Text Compression Benchmark](http://mattmahoney.net/dc/text.html#2702) (thanks to Matt Mahoney)
 
-Tool    | Compressed Size | Encode | Decode |
---------|-----------------|--------|--------|
-xz      |26376KB          |83.870s |2.237s  |
-bzip2   |29009KB          |10.733s |4.649s  |
-zling e4|29721KB          |4.150s  |1.016s  |
-zling e3|30000KB          |3.554s  |1.061s  |
-zling e2|30478KB          |2.947s  |1.030s  |
-zling e1|30856KB          |2.634s  |1.034s  |
-zling e0|31456KB          |2.302s  |1.080s  |
-gzip    |36518KB          |6.597s  |1.094s  |
+>     CPU: Intel(R) Xeon(R) CPU E5-2620 v3 @ 2.40GHz
+>     MEM: 65726592 kB
+>     OS:  Linux 2.6.32.43-tlinux-1.0.14-default
+
+Tool    | Encode | Decode | Compressed Size | status
+--------|--------|--------|-----------------|--------
+xz          | 1m23.838s | 0m2.265s | 26375764 | PASS
+bzip2       | 0m10.680s | 0m4.633s | 29008758 | PASS
+libzling e0 |  0m2.208s | 0m1.043s | 31456189 | PASS
+libzling e1 |  0m2.504s | 0m1.021s | 30855731 | PASS
+libzling e2 |  0m2.860s | 0m1.021s | 30477912 | PASS
+libzling e3 |  0m3.383s | 0m1.007s | 29999672 | PASS
+libzling e4 |  0m4.058s | 0m0.989s | 29721410 | PASS
+gzip        |  0m6.502s | 0m1.089s | 36518322 | PASS
 
 Build & Install
 ===============
