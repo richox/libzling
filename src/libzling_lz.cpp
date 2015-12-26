@@ -179,6 +179,13 @@ int ZlingRolzEncoder::Encode(unsigned char* ibuf, uint16_t* obuf, int ilen, int 
     return opos;
 }
 
+void ZlingRolzEncoder::SetLevel(int compression_level) {
+    m_match_depth = kPredefinedConfigs[compression_level].m_match_depth;
+    m_lazymatch1_depth = kPredefinedConfigs[compression_level].m_lazymatch1_depth;
+    m_lazymatch2_depth = kPredefinedConfigs[compression_level].m_lazymatch2_depth;
+    return;
+}
+
 void ZlingRolzEncoder::Reset() {
     for (int context = 0; context < 256; context++) {
         for (int i = 0; i < kBucketItemSize; i++) {
