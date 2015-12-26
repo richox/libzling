@@ -18,11 +18,11 @@ Tool    | Encode | Decode | Compressed Size | status
 --------|--------|--------|-----------------|--------
 xz          | 1m23.838s | 0m2.265s | 26375764 | PASS
 bzip2       | 0m10.680s | 0m4.633s | 29008758 | PASS
-libzling e0 |  0m2.208s | 0m1.043s | 31456189 | PASS
-libzling e1 |  0m2.504s | 0m1.021s | 30855731 | PASS
-libzling e2 |  0m2.860s | 0m1.021s | 30477912 | PASS
-libzling e3 |  0m3.383s | 0m1.007s | 29999672 | PASS
 libzling e4 |  0m4.058s | 0m0.989s | 29721410 | PASS
+libzling e3 |  0m3.383s | 0m1.007s | 29999672 | PASS
+libzling e2 |  0m2.860s | 0m1.021s | 30477912 | PASS
+libzling e1 |  0m2.504s | 0m1.021s | 30855731 | PASS
+libzling e0 |  0m2.208s | 0m1.043s | 31456189 | PASS
 gzip        |  0m6.502s | 0m1.089s | 36518322 | PASS
 
 Build & Install
