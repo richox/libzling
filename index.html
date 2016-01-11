@@ -1,0 +1,169 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Libzling by richox</title>
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/github-dark.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script src="javascripts/respond.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <!--[if lt IE 8]>
+    <link rel="stylesheet" href="stylesheets/ie.css">
+    <![endif]-->
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
+  </head>
+  <body>
+      <div id="header">
+        <nav>
+          <li class="fork"><a href="https://github.com/richox/libzling">View On GitHub</a></li>
+          <li class="downloads"><a href="https://github.com/richox/libzling/zipball/master">ZIP</a></li>
+          <li class="downloads"><a href="https://github.com/richox/libzling/tarball/master">TAR</a></li>
+          <li class="title">DOWNLOADS</li>
+        </nav>
+      </div><!-- end header -->
+
+    <div class="wrapper">
+
+      <section>
+        <div id="title">
+          <h1>Libzling</h1>
+          <p>fast and niubility compression library.</p>
+          <hr>
+          <span class="credits left">Project maintained by <a href="https://github.com/richox">richox</a></span>
+          <span class="credits right">Hosted on GitHub Pages &mdash; Theme by <a href="https://twitter.com/michigangraham">mattgraham</a></span>
+        </div>
+
+        <h1>
+<a id="libzling" class="anchor" href="#libzling" aria-hidden="true"><span class="octicon octicon-link"></span></a>libzling</h1>
+
+<p><strong>fast and lightweight compression library and utility.</strong></p>
+
+<h1>
+<a id="introduction" class="anchor" href="#introduction" aria-hidden="true"><span class="octicon octicon-link"></span></a>Introduction</h1>
+
+<p>Libzling is an improved lightweight compression utility and library. libzling uses fast order-1 ROLZ (16MB block size and 10MB dictionary size) followed with Huffman encoding, making it <strong>3 times as fast as gzip on compressing, while still getting much better compression ratio and decompression speed</strong>.</p>
+
+<p>Simple benchmark with <strong>enwik8</strong>(100,000,000 bytes), also on <a href="http://mattmahoney.net/dc/text.html#2702">Large Text Compression Benchmark</a> (thanks to Matt Mahoney)</p>
+
+<table>
+<thead>
+<tr>
+<th>Tool</th>
+<th>Compressed Size</th>
+<th>Encode</th>
+<th>Decode</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>xz</td>
+<td>26376KB</td>
+<td>83.870s</td>
+<td>2.237s</td>
+</tr>
+<tr>
+<td>bzip2</td>
+<td>29009KB</td>
+<td>10.733s</td>
+<td>4.649s</td>
+</tr>
+<tr>
+<td>zling e4</td>
+<td>29721KB</td>
+<td>4.150s</td>
+<td>1.016s</td>
+</tr>
+<tr>
+<td>zling e3</td>
+<td>30000KB</td>
+<td>3.554s</td>
+<td>1.061s</td>
+</tr>
+<tr>
+<td>zling e2</td>
+<td>30478KB</td>
+<td>2.947s</td>
+<td>1.030s</td>
+</tr>
+<tr>
+<td>zling e1</td>
+<td>30856KB</td>
+<td>2.634s</td>
+<td>1.034s</td>
+</tr>
+<tr>
+<td>zling e0</td>
+<td>31456KB</td>
+<td>2.302s</td>
+<td>1.080s</td>
+</tr>
+<tr>
+<td>gzip</td>
+<td>36518KB</td>
+<td>6.597s</td>
+<td>1.094s</td>
+</tr>
+</tbody>
+</table>
+
+<h1>
+<a id="build--install" class="anchor" href="#build--install" aria-hidden="true"><span class="octicon octicon-link"></span></a>Build &amp; Install</h1>
+
+<p>You can build and install libzling automatically by <strong>cmake</strong> with the following command:</p>
+
+<pre><code>cd ./build
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/path/to/install
+make
+make install
+</code></pre>
+
+<h1>
+<a id="usage" class="anchor" href="#usage" aria-hidden="true"><span class="octicon octicon-link"></span></a>Usage</h1>
+
+<p>Libling provides simple and lightweight interface. here is a simple program showing the basic usage of libzling. (compiled with <code>g++ -Wall -O3 zling_sample.cpp -o zling_sample -lzling</code>)</p>
+
+<div class="highlight highlight-source-c++"><pre>#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">"</span>libzling/libzling.h<span class="pl-pds">"</span></span>
+
+<span class="pl-k">int</span> <span class="pl-en">main</span>() {
+    <span class="pl-c">// compress</span>
+    {
+        <span class="pl-k">const</span> <span class="pl-k">int</span> level = <span class="pl-c1">0</span>;  <span class="pl-c">// valid levels: 0, 1, 2, 3, 4</span>
+        <span class="pl-c1">FILE</span>* fin = <span class="pl-c1">fopen</span>(<span class="pl-s"><span class="pl-pds">"</span>./1.txt<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>rb<span class="pl-pds">"</span></span>);
+        <span class="pl-c1">FILE</span>* fout = <span class="pl-c1">fopen</span>(<span class="pl-s"><span class="pl-pds">"</span>./1.txt.zlng<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>wb<span class="pl-pds">"</span></span>);
+
+        baidu::zling::FileInputter  <span class="pl-smi">inputter</span>(fin);
+        baidu::zling::FileOutputter <span class="pl-smi">outputter</span>(fout);
+
+        <span class="pl-c1">baidu::zling::Encode</span>(&amp;inputter, &amp;outputter, level);
+        <span class="pl-c1">fclose</span>(fin);
+        <span class="pl-c1">fclose</span>(fout);
+    }
+
+    <span class="pl-c">// decompress</span>
+    {
+        <span class="pl-c1">FILE</span>* fin = <span class="pl-c1">fopen</span>(<span class="pl-s"><span class="pl-pds">"</span>./1.txt.zlng<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>rb<span class="pl-pds">"</span></span>);
+        <span class="pl-c1">FILE</span>* fout = <span class="pl-c1">fopen</span>(<span class="pl-s"><span class="pl-pds">"</span>./2.txt<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>wb<span class="pl-pds">"</span></span>);
+
+        baidu::zling::FileInputter  <span class="pl-smi">inputter</span>(fin);
+        baidu::zling::FileOutputter <span class="pl-smi">outputter</span>(fout);
+
+        <span class="pl-c1">baidu::zling::Decode</span>(&amp;inputter, &amp;outputter);
+        <span class="pl-c1">fclose</span>(fin);
+        <span class="pl-c1">fclose</span>(fout);
+    }
+    <span class="pl-k">return</span> <span class="pl-c1">0</span>;
+}</pre></div>
+
+<p>However libzling supports more complicated interface, see <strong>./demo/zling.cpp</strong> for details.</p>
+      </section>
+
+    </div>
+    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+    
+  </body>
+</html>
