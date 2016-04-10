@@ -294,6 +294,11 @@ int inline ZlingRolzEncoder::MatchLazy(unsigned char* buf, int pos, int maxlen, 
             return 1;
         }
         node = bucket->suffix[node];
+
+        // end chaining?
+        if (node == 65535 || offset <= (bucket->offset[node] & 0xffffff)) {
+            break;
+        }
     }
     return 0;
 }
