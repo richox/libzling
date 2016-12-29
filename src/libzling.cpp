@@ -110,14 +110,13 @@ struct EncodeResource {
     unsigned char* ibuf;
     unsigned char* obuf;
     uint16_t* tbuf;
-    int level;
 
-    EncodeResource(int level): lzencoder(NULL), ibuf(NULL), obuf(NULL), tbuf(NULL), level(level) {
+    EncodeResource(): lzencoder(NULL), ibuf(NULL), obuf(NULL), tbuf(NULL) {
         try {
             ibuf = new unsigned char[kBlockSizeIn + kSentinelLen];
             obuf = new unsigned char[kBlockSizeHuffman + kSentinelLen];
             tbuf = new uint16_t[kBlockSizeRolz + kSentinelLen];
-            lzencoder = new ZlingRolzEncoder(level);
+            lzencoder = new ZlingRolzEncoder();
 
         } catch (const std::bad_alloc& e) {
             delete lzencoder;
@@ -178,11 +177,12 @@ int Encode(Inputter* inputter, Outputter* outputter, ActionHandler* action_handl
         action_handler->OnInit();
     }
 
-    EncodeResource res(level);
+    EncodeResource res;
     int rlen;
     int ilen;
     int olen;
     int encpos;
+    int current_level = level;
 
     while (!inputter->IsEnd() && !inputter->IsErr()) {
         rlen = 0;
@@ -203,7 +203,7 @@ int Encode(Inputter* inputter, Outputter* outputter, ActionHandler* action_handl
             // ROLZ encode
             // ============================================================
             int encpos_old = encpos;
-            rlen = res.lzencoder->Encode(res.ibuf, res.tbuf, ilen, kBlockSizeRolz, &encpos);
+            rlen = res.lzencoder->Encode(current_level, res.ibuf, res.tbuf, ilen, kBlockSizeRolz, &encpos);
 
             // HUFFMAN encode
             // ============================================================
@@ -269,9 +269,9 @@ int Encode(Inputter* inputter, Outputter* outputter, ActionHandler* action_handl
             // lower level for uncompressible data
             if (1.0 * olen / (encpos - encpos_old + 1) > 0.95) {
                 LIBZLING_DEBUG_COUNT("lz:uncompressible", 1);
-                res.lzencoder->SetLevel(0);
+                current_level = 0;
             } else {
-                res.lzencoder->SetLevel(res.level);
+                current_level = level;
             }
 
             // outputter
