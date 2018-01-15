@@ -104,7 +104,7 @@ struct DemoActionHandler: baidu::zling::ActionHandler {
             isize = m_outputter->GetOutputSize();
             osize = m_inputter->GetInputSize();
         }
-        fprintf(stderr, "%s: %"PRIu64" %s %"PRIu64", time=%.3f sec, speed=%.3f MB/sec\n",
+        fprintf(stderr, "%s: %llu %s %llu, time=%.3f sec, speed=%.3f MB/sec\n",
                 encode_message,
                 isize,
                 encode_direction,

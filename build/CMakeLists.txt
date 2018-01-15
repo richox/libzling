@@ -2,6 +2,8 @@
 project(libzling)
 cmake_minimum_required(VERSION 2.8)
 
+add_definitions(-std=c++14)
+
 # source path
 aux_source_directory("../src" DIR_SRC)
 aux_source_directory("../demo" DIR_DEMO)

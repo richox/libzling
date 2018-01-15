@@ -222,8 +222,8 @@ int Encode(Inputter* inputter, Outputter* outputter, ActionHandler* action_handl
                     freq_table2[matchidx_code[res.tbuf[++i]]] += 1;
                 }
             }
-            ZlingMakeLengthTable(freq_table1, length_table1, 0, kHuffmanCodes1, kHuffmanMaxLen1);
-            ZlingMakeLengthTable(freq_table2, length_table2, 0, kHuffmanCodes2, kHuffmanMaxLen2);
+            ZlingMakeLengthTable(freq_table1, length_table1, kHuffmanCodes1, kHuffmanMaxLen1);
+            ZlingMakeLengthTable(freq_table2, length_table2, kHuffmanCodes2, kHuffmanMaxLen2);
 
             ZlingMakeEncodeTable(length_table1, encode_table1, kHuffmanCodes1, kHuffmanMaxLen1);
             ZlingMakeEncodeTable(length_table2, encode_table2, kHuffmanCodes2, kHuffmanMaxLen2);
@@ -242,23 +242,14 @@ int Encode(Inputter* inputter, Outputter* outputter, ActionHandler* action_handl
                 if (res.tbuf[i] >= 258) {
                     uint32_t code = matchidx_code[res.tbuf[++i]];
 
-                    codebuf.Input(
-                        encode_table2[code],
-                        length_table2[code]);
-                    codebuf.Input(
-                        res.tbuf[i] - matchidx_base[code],
-                        matchidx_bitlen[code]);
+                    codebuf.Input(encode_table2[code], length_table2[code]);
+                    codebuf.Input(res.tbuf[i] - matchidx_base[code], matchidx_bitlen[code]);
                 }
                 if (codebuf.GetLength() >= 32) {
-#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-                    *reinterpret_cast<uint32_t*>(res.obuf + opos) = codebuf.Output(32);
-                    opos += 4;
-#else
                     res.obuf[opos++] = codebuf.Output(8);
                     res.obuf[opos++] = codebuf.Output(8);
                     res.obuf[opos++] = codebuf.Output(8);
                     res.obuf[opos++] = codebuf.Output(8);
-#endif
                 }
             }
             while (codebuf.GetLength() > 0) {
@@ -367,36 +358,19 @@ int Decode(Inputter* inputter, Outputter* outputter, ActionHandler* action_handl
             ZlingMakeEncodeTable(length_table2, encode_table2, kHuffmanCodes2, kHuffmanMaxLen2);
 
             // decode_table1: 2-level decode table
-            ZlingMakeDecodeTable(length_table1,
-                                 encode_table1,
-                                 decode_table1,
-                                 kHuffmanCodes1,
-                                 kHuffmanMaxLen1);
-            ZlingMakeDecodeTable(length_table1,
-                                 encode_table1,
-                                 decode_table1_fast,
-                                 kHuffmanCodes1,
-                                 kHuffmanMaxLen1Fast);
+            ZlingMakeDecodeTable(length_table1, encode_table1, decode_table1, kHuffmanCodes1, kHuffmanMaxLen1);
+            ZlingMakeDecodeTable(length_table1, encode_table1, decode_table1_fast, kHuffmanCodes1, kHuffmanMaxLen1Fast);
 
             // decode_table2: 1-level decode table
-            ZlingMakeDecodeTable(length_table2,
-                                 encode_table2,
-                                 decode_table2,
-                                 kHuffmanCodes2,
-                                 kHuffmanMaxLen2);
+            ZlingMakeDecodeTable(length_table2, encode_table2, decode_table2, kHuffmanCodes2, kHuffmanMaxLen2);
 
             // decode
             for (int i = 0; i < rlen; i++) {
                 if (codebuf.GetLength() < 32) {
-#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-                    codebuf.Input(*reinterpret_cast<uint32_t*>(res.obuf + opos), 32);
-                    opos += 4;
-#else
                     codebuf.Input(res.obuf[opos++], 8);
                     codebuf.Input(res.obuf[opos++], 8);
                     codebuf.Input(res.obuf[opos++], 8);
                     codebuf.Input(res.obuf[opos++], 8);
-#endif
                 }
 
                 res.tbuf[i] = decode_table1_fast[codebuf.Peek(kHuffmanMaxLen1Fast)];
