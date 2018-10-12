@@ -1,3 +1,5 @@
+(this project is no longer maintained, please move to http://github.com/richox/orz)
+
 libzling
 ========
 
